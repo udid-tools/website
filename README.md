@@ -7,6 +7,10 @@ installing an app, connecting a cable, opening iTunes, or using Xcode.
 
 Live site: [https://www.udid.tools](https://www.udid.tools)
 
+[![VirusTotal domain report](https://img.shields.io/badge/VirusTotal-domain_report-394EFF?logo=virustotal&logoColor=white)](https://www.virustotal.com/gui/domain/udid.tools)
+[![Google Safe Browsing status](https://img.shields.io/badge/Google_Safe_Browsing-check_status-4285F4?logo=googlechrome&logoColor=white)](https://transparencyreport.google.com/safe-browsing/search?url=udid.tools)
+[![MDN HTTP Observatory scan](https://img.shields.io/badge/MDN_HTTP_Observatory-view_scan-000000?logo=mdnwebdocs&logoColor=white)](https://developer.mozilla.org/en-US/observatory/analyze?host=www.udid.tools)
+
 ## Why This Exists
 
 Apple device registration still often starts with the same small but annoying
@@ -71,6 +75,23 @@ The service should still be treated as a developer utility, not as an identity,
 security, or device-management platform. A UDID identifies a specific Apple
 device for development and provisioning workflows, so share it only with people
 or teams you trust.
+
+## Independent Security Checks
+
+The badges at the top of this README link to live reports from independent
+security services:
+
+| Service                                                                                             | What it checks                                                         |
+| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| [VirusTotal](https://www.virustotal.com/gui/domain/udid.tools)                                      | Domain reputation across security vendors and threat-intelligence data |
+| [Google Safe Browsing](https://transparencyreport.google.com/safe-browsing/search?url=udid.tools)   | Known malware, phishing, deceptive pages, and unwanted software        |
+| [MDN HTTP Observatory](https://developer.mozilla.org/en-US/observatory/analyze?host=www.udid.tools) | HTTP security headers and browser-facing defensive configuration       |
+
+These reports are maintained by third parties, may reflect different scan
+times, and cover different parts of the security posture. They are useful
+independent signals, not a certification or a guarantee that the service is
+free of every vulnerability. To report a security issue privately, follow the
+[security policy](SECURITY.md).
 
 ## Guides
 
