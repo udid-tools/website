@@ -62,7 +62,7 @@
     "crypto": "^1.0.1",
     "lucide-react": "^0.562.0",
     "motion": "^12.23.26",
-    "next": "^15.5.19",
+    "next": "^15.5.21",
     "next-sitemap": "^4.2.3",
     "node-forge": "^1.4.0",
     "react": "19.1.0",
