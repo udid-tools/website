@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import VercelAnalytics from "@/app/components/VercelAnalytics";
@@ -18,6 +19,8 @@ const SITE_URL = "https://www.udid.tools";
 const SITE_NAME = "UDID Tools";
 const TWITTER = "@alextartmin";
 const OG_IMAGE = `${SITE_URL}/og-image.png`;
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -131,11 +134,13 @@ function safeJsonForHtml(value: unknown) {
   });
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
@@ -146,6 +151,7 @@ export default function RootLayout({
           id="ld-website"
           type="application/ld+json"
           strategy="afterInteractive"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: safeJsonForHtml(websiteJsonLd) }}
         />
         {/* JSON-LD: WebApplication */}
@@ -153,6 +159,7 @@ export default function RootLayout({
           id="ld-web-application"
           type="application/ld+json"
           strategy="afterInteractive"
+          nonce={nonce}
           dangerouslySetInnerHTML={{ __html: safeJsonForHtml(webApplicationJsonLd) }}
         />
         <VercelAnalytics />
