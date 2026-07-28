@@ -4,6 +4,25 @@ import type { NextRequest } from "next/server";
 const CANONICAL_HOST = "www.udid.tools";
 const NOINDEX_HEADER_VALUE = "noindex, nofollow, noarchive, nosnippet";
 
+function createContentSecurityPolicy(nonce: string) {
+  return [
+    "default-src 'none'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    "style-src 'self'",
+    "style-src-attr 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "manifest-src 'self'",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
 export function middleware(req: NextRequest) {
   const url = req.nextUrl;
 
@@ -24,7 +43,20 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url, 301);
   }
 
-  const response = NextResponse.next();
+  const nonce = crypto.randomUUID();
+  const contentSecurityPolicy = createContentSecurityPolicy(nonce);
+  const requestHeaders = new Headers(req.headers);
+
+  requestHeaders.set("Content-Security-Policy", contentSecurityPolicy);
+  requestHeaders.set("x-nonce", nonce);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  response.headers.set("Content-Security-Policy", contentSecurityPolicy);
 
   if (
     url.pathname === "/success" ||
