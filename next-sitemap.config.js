@@ -5,6 +5,22 @@ module.exports = {
   sitemapSize: 7000,
   // не індексуємо success (із query теж)
   exclude: ["/success", "/success*"],
+  additionalPaths: async (config) => {
+    const paths = [
+      "/",
+      "/privacy-policy",
+      "/terms",
+      "/guides",
+      "/guides/get-udid-without-itunes",
+      "/guides/how-to-find-iphone-udid",
+      "/guides/is-it-safe-to-share-udid",
+      "/guides/udid-for-app-testing",
+      "/guides/udid-vs-serial-number-vs-imei",
+      "/guides/what-is-udid",
+    ];
+
+    return Promise.all(paths.map((path) => config.transform(config, path)));
+  },
   robotsTxtOptions: {
     policies: [
       { userAgent: "*", allow: "/" },
