@@ -3,7 +3,7 @@
 This project adheres to the Contributor Covenant, version 2.1.
 
 - Official text: https://www.contributor-covenant.org/version/2/1/code_of_conduct/
-- Questions or reports of violations: please contact alexander@tartmin.name
+- Questions or reports of violations: please contact support@udid.tools
 
 ## Our Pledge
 
@@ -29,7 +29,7 @@ Project maintainers have the right and responsibility to remove, edit, or reject
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting alexander@tartmin.name. All complaints will be reviewed and handled promptly, fairly, and with respect for the privacy and safety of the reporter.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting support@udid.tools. All complaints will be reviewed and handled promptly, fairly, and with respect for the privacy and safety of the reporter.
 
 ## Attribution
 
