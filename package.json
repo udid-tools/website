@@ -55,6 +55,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@sentry/nextjs": "^10.59.0",
     "@udid-tools/core": "0.1.0-beta.2",
+    "@udid-tools/device-info": "1.0.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "class-variance-authority": "^0.7.1",

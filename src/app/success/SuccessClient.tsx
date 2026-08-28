@@ -1,6 +1,7 @@
 "use client";
 
 import * as Sentry from "@sentry/nextjs";
+import { formatOsVersion, getDeviceModelName } from "@udid-tools/device-info";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -25,8 +26,6 @@ import {
   SAMPLE_RESULT_QUERY_PARAM,
   SAMPLE_RESULT_SOURCE,
 } from "@/app/success/sampleDeviceData";
-import { getAppleDeviceModelName } from "@/utils/appleDeviceModels";
-import { formatAppleOsVersion } from "@/utils/appleOsVersions";
 import { writeClipboardSafe } from "@/utils/clipboard";
 
 type FieldKey = "UDID" | "IMEI" | "MEID" | "PRODUCT" | "SERIAL" | "VERSION";
@@ -143,16 +142,20 @@ function SuccessContent() {
   const getDeviceDataValue = (field: FieldKey, sampleKey: keyof typeof sampleDeviceData) =>
     searchParams.get(field) ?? (isSampleResult ? sampleDeviceData[sampleKey] : "");
 
+  const productIdentifier = getDeviceDataValue("PRODUCT", "model");
   const deviceData: DeviceData = {
     udid: getDeviceDataValue("UDID", "udid"),
-    model: getAppleDeviceModelName(getDeviceDataValue("PRODUCT", "model")),
+    model: getDeviceModelName(productIdentifier) ?? productIdentifier,
     version: getDeviceDataValue("VERSION", "version"),
     serial: getDeviceDataValue("SERIAL", "serial"),
     product: getDeviceDataValue("PRODUCT", "product"),
     imei: getDeviceDataValue("IMEI", "imei"),
     meid: getDeviceDataValue("MEID", "meid"),
   };
-  const osVersion = formatAppleOsVersion(deviceData.product, deviceData.version);
+  const osVersion = formatOsVersion({
+    productIdentifier: deviceData.product,
+    build: deviceData.version,
+  });
 
   const formatFields = (includeEmpty = false) =>
     (includeEmpty ? fields : nonEmpty)
