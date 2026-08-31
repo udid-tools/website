@@ -1,0 +1,61 @@
+name: Bug report
+description: Report reproducible incorrect behavior on the UDID Tools website.
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first and use only synthetic device data.
+
+        **Never attach private keys, PKCS#12/PFX identities, passphrases, result tokens, challenges, or real device identifiers.** Report suspected vulnerabilities through [private vulnerability reporting](https://github.com/udid-tools/website/security/advisories/new).
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Preflight checks
+      options:
+        - label: I searched existing issues and did not find a duplicate.
+          required: true
+        - label: This is not a security vulnerability.
+          required: true
+        - label: My reproduction contains only synthetic and redacted data.
+          required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - Public page or guide
+        - Configuration profile download
+        - Profile response processing
+        - Result page or sharing
+        - Browser compatibility or accessibility
+        - Release or deployment
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser, device, and operating system
+      placeholder: Safari 19, iPhone 15 Pro, iOS 19.0
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+    validations:
+      required: true

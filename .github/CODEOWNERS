@@ -1,0 +1,13 @@
+* @Baskerville42
+
+/.github/workflows/ @Baskerville42
+/.github/dependabot.yml @Baskerville42
+/SECURITY.md @Baskerville42
+/next.config.ts @Baskerville42
+/package.json @Baskerville42
+/package-lock.json @Baskerville42
+/src/app/api/ @Baskerville42
+/src/lib/profile-challenge.ts @Baskerville42
+/src/lib/profile-service.ts @Baskerville42
+/src/lib/result-token.ts @Baskerville42
+/src/lib/server-config.ts @Baskerville42

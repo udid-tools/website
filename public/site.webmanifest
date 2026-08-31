@@ -1,0 +1,47 @@
+{
+  "id": "/",
+  "name": "UDID Tools",
+  "short_name": "UDID Tools",
+  "description": "Get your iPhone or iPad UDID online in Safari without iTunes, Xcode, an Apple ID, a cable, or an app install.",
+  "lang": "en-US",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#006fff",
+  "categories": ["utilities", "productivity"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Get UDID",
+      "short_name": "Get UDID",
+      "description": "Start the free UDID retrieval flow.",
+      "url": "/",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "UDID Guides",
+      "short_name": "Guides",
+      "description": "Read UDID guides and explanations.",
+      "url": "/guides",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

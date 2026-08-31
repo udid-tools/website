@@ -1,0 +1,68 @@
+name: Manual preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: manual-preview
+  cancel-in-progress: true
+
+env:
+  VERCEL_CLI_VERSION: 59.10.0
+
+jobs:
+  preview:
+    name: Verify and deploy stable preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: preview
+      url: ${{ steps.alias.outputs.url }}
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      PREVIEW_DOMAIN: ${{ vars.VERCEL_PREVIEW_DOMAIN }}
+      npm_config_ignore_scripts: "true"
+    steps:
+      - name: Check out selected ref
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.14.0
+          package-manager-cache: false
+      - name: Install locked application dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run complete verification
+        run: npm run verify
+      - name: Require the stable preview domain
+        run: test -n "${PREVIEW_DOMAIN}"
+      - name: Pull preview project settings
+        run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel pull --yes --environment=preview --token="${VERCEL_TOKEN}"
+      - name: Build preview output
+        env:
+          NEXT_PUBLIC_VERCEL_ENV: preview
+          NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+          VERCEL_ENV: preview
+          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
+        run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel build --token="${VERCEL_TOKEN}"
+      - name: Deploy prebuilt preview
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_url="$(npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel deploy --prebuilt --archive=tgz --token="${VERCEL_TOKEN}")"
+          echo "url=${deployment_url}" >> "${GITHUB_OUTPUT}"
+      - name: Point the stable preview domain to this deployment
+        id: alias
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel alias set "${DEPLOYMENT_URL}" "${PREVIEW_DOMAIN}" --token="${VERCEL_TOKEN}"
+          echo "url=https://${PREVIEW_DOMAIN}" >> "${GITHUB_OUTPUT}"
