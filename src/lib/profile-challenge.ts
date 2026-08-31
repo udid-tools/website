@@ -35,5 +35,9 @@ export function verifyProfileChallenge(value: unknown, now = Date.now()) {
     return false;
   const expected = signature(`${VERSION}.${timestamp}.${nonce}`);
   const provided = Buffer.from(providedSignature, "base64url");
-  return provided.byteLength === expected.byteLength && timingSafeEqual(provided, expected);
+  return (
+    provided.byteLength === expected.byteLength &&
+    provided.toString("base64url") === providedSignature &&
+    timingSafeEqual(provided, expected)
+  );
 }
