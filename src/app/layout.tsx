@@ -5,6 +5,8 @@ import { PublicTelemetry } from "@/components/PublicTelemetry";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import "./globals.css";
 
+const isPreviewDeployment = process.env["VERCEL_ENV"] === "preview";
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -63,14 +65,21 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
   robots: {
-    index: true,
-    follow: true,
+    index: !isPreviewDeployment,
+    follow: !isPreviewDeployment,
+    noarchive: isPreviewDeployment,
+    nosnippet: isPreviewDeployment,
     googleBot: {
-      index: true,
-      follow: true,
-      "max-image-preview": "large",
-      "max-snippet": -1,
-      "max-video-preview": -1,
+      index: !isPreviewDeployment,
+      follow: !isPreviewDeployment,
+      noimageindex: isPreviewDeployment,
+      ...(isPreviewDeployment
+        ? {}
+        : {
+            "max-image-preview": "large" as const,
+            "max-snippet": -1,
+            "max-video-preview": -1,
+          }),
     },
   },
   icons: {
