@@ -2,6 +2,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 import type { NextConfig } from "next";
 
 const isDevelopment = process.env.NODE_ENV === "development";
+const isPreviewDeployment = process.env["VERCEL_ENV"] === "preview";
 const contentSecurityPolicy = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com${isDevelopment ? " 'unsafe-eval'" : ""}`,
@@ -30,6 +31,9 @@ const securityHeaders = [
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
+  ...(isPreviewDeployment
+    ? [{ key: "X-Robots-Tag", value: "noindex, nofollow, noarchive, nosnippet" }]
+    : []),
 ];
 
 const nonIndexableAssetPaths = [
