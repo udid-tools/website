@@ -33,7 +33,8 @@ describe("profile challenges", () => {
   it("rejects tampering and malformed values", () => {
     const now = Date.UTC(2026, 7, 31, 12);
     const challenge = createProfileChallenge(now);
-    expect(verifyProfileChallenge(`${challenge.slice(0, -1)}A`, now)).toBe(false);
+    const replacement = challenge.endsWith("A") ? "B" : "A";
+    expect(verifyProfileChallenge(`${challenge.slice(0, -1)}${replacement}`, now)).toBe(false);
     expect(verifyProfileChallenge("legacy-challenge", now)).toBe(false);
     expect(verifyProfileChallenge(undefined, now)).toBe(false);
   });
