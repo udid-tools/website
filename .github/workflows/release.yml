@@ -66,13 +66,30 @@ jobs:
         run: npm run verify
       - name: Pull production project settings
         run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel pull --yes --environment=production --token="${VERCEL_TOKEN}"
-      - name: Build the Vercel output once
+      - name: Build the standalone Vercel output once
         env:
           NEXT_PUBLIC_VERCEL_ENV: production
           NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
           VERCEL_ENV: production
           VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
-        run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel build --prod --token="${VERCEL_TOKEN}"
+        run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel build --prod --standalone --token="${VERCEL_TOKEN}"
+      - name: Require a self-contained Vercel output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d .vercel/output/functions
+          external_reference_count=0
+          while IFS= read -r -d '' config; do
+            count="$(jq '(.filePathMap // {}) | length' "${config}")"
+            if (( count > 0 )); then
+              echo "${config} contains ${count} external file references." >&2
+              external_reference_count=$((external_reference_count + count))
+            fi
+          done < <(find .vercel/output/functions -name .vc-config.json -print0)
+          if (( external_reference_count > 0 )); then
+            echo "Standalone output is not self-contained; refusing to package it." >&2
+            exit 1
+          fi
       - name: Add production ownership verification files
         env:
           GOOGLE_SITE_VERIFICATION_HTML_CONTENT: ${{ secrets.GOOGLE_SITE_VERIFICATION_HTML_CONTENT }}
