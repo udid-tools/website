@@ -162,8 +162,8 @@ jobs:
           set -euo pipefail
           args=("${GITHUB_REF_NAME}" --verify-tag --generate-notes --title "${GITHUB_REF_NAME}" --draft)
           if [[ "${VERSION}" == *-* ]]; then args+=(--prerelease); fi
-          gh release create "${args[@]}" release/*
-          gh release edit "${GITHUB_REF_NAME}" --draft=false
+          gh release create "${args[@]}" --repo "${GITHUB_REPOSITORY}" release/*
+          gh release edit "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" --draft=false
 
   deploy-production:
     name: Deploy the released artifact to Vercel
