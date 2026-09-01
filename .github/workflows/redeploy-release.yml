@@ -1,0 +1,156 @@
+name: Redeploy signed release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing signed GitHub Release tag to deploy
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+env:
+  VERCEL_CLI_VERSION: 59.10.0
+
+jobs:
+  deploy-production:
+    name: Verify and redeploy the signed release
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    permissions:
+      attestations: read
+      contents: read
+      deployments: write
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      npm_config_ignore_scripts: "true"
+    steps:
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.14.0
+          package-manager-cache: false
+      - name: Download the published release artifact
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! "${RELEASE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Release tag has an invalid format." >&2
+            exit 1
+          fi
+          ref_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}")"
+          if [[ "$(jq --raw-output '.object.type' <<< "${ref_json}")" != "tag" ]]; then
+            echo "Release tag must be an annotated tag." >&2
+            exit 1
+          fi
+          tag_object_sha="$(jq --raw-output '.object.sha' <<< "${ref_json}")"
+          if [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object_sha}" --jq '.verification.verified')" != "true" ]]; then
+            echo "GitHub did not verify the release tag signature." >&2
+            exit 1
+          fi
+          release_json="$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isDraft,isPrerelease)"
+          if [[ "$(jq --raw-output '.isDraft' <<< "${release_json}")" != "false" || "$(jq --raw-output '.isPrerelease' <<< "${release_json}")" != "false" ]]; then
+            echo "Only a published, non-prerelease GitHub Release can be deployed to production." >&2
+            exit 1
+          fi
+          archive="website-${RELEASE_TAG}.vercel-output.tar.gz"
+          mkdir release
+          gh release download "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --dir release --pattern "${archive}" --pattern "${archive}.sha256"
+          test -f "release/${archive}"
+          test -f "release/${archive}.sha256"
+          echo "archive=${archive}" >> "${GITHUB_OUTPUT}"
+      - name: Verify checksum and signed provenance
+        env:
+          ARCHIVE: ${{ steps.release.outputs.archive }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          (cd release && sha256sum --check "${ARCHIVE}.sha256")
+          gh attestation verify "release/${ARCHIVE}" --repo "${GITHUB_REPOSITORY}"
+      - name: Restore the attested Build Output API directory
+        env:
+          ARCHIVE: ${{ steps.release.outputs.archive }}
+        run: |
+          mkdir .vercel
+          tar --extract --gzip --file="release/${ARCHIVE}" --directory=.vercel
+      - name: Deploy without rebuilding or promoting
+        id: deploy
+        shell: bash
+        run: |
+          set -euo pipefail
+          deployment_url="$(npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel deploy --prebuilt --prod --skip-domain --archive=tgz --token="${VERCEL_TOKEN}")"
+          if [[ ! "${deployment_url}" =~ ^https://[a-zA-Z0-9-]+\.vercel\.app$ ]]; then
+            echo "Vercel returned an invalid deployment URL." >&2
+            exit 1
+          fi
+          echo "url=${deployment_url}" >> "${GITHUB_OUTPUT}"
+      - name: Smoke-test the staged production deployment
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          homepage="${RUNNER_TEMP}/homepage.html"
+          headers="${RUNNER_TEMP}/staged-headers.txt"
+          robots="${RUNNER_TEMP}/staged-robots.txt"
+          # The curl subcommand forwards explicit token flags to system curl; authenticate through VERCEL_TOKEN.
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl / --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --dump-header "${headers}" --output "${homepage}"
+          grep --fixed-strings --quiet "UDID Tools" "${homepage}"
+          grep --ignore-case --quiet '^cross-origin-opener-policy: same-origin' "${headers}"
+          if grep --ignore-case --quiet '^x-powered-by:' "${headers}"; then
+            echo "Staged deployment does not contain the expected website build." >&2
+            exit 1
+          fi
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl /robots.txt --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --output "${robots}"
+          grep --fixed-strings --quiet 'Disallow: /api/' "${robots}"
+          grep --fixed-strings --quiet 'Disallow: /success' "${robots}"
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl /googleb9f15617438f045c.html --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --output /dev/null
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl /e67fc0a36f388fc28107bace704aae67029e7c53858f74abbad717c694e31052.txt --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --output /dev/null
+      - name: Promote the released deployment to production domains
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel promote "${DEPLOYMENT_URL}" --yes --token="${VERCEL_TOKEN}"
+      - name: Verify the public production domains
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="${RUNNER_TEMP}/production-headers.txt"
+          robots="${RUNNER_TEMP}/production-robots.txt"
+          success_headers="${RUNNER_TEMP}/production-success-headers.txt"
+          for attempt in {1..6}; do
+            curl --fail --silent --show-error --retry 3 --retry-all-errors --dump-header "${headers}" --output /dev/null https://www.udid.tools/
+            if grep --ignore-case --quiet '^cross-origin-opener-policy: same-origin' "${headers}" && ! grep --ignore-case --quiet '^x-powered-by:' "${headers}"; then
+              break
+            fi
+            if (( attempt == 6 )); then
+              echo "Production domain still serves the previous deployment." >&2
+              exit 1
+            fi
+            sleep 5
+          done
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --output "${robots}" https://www.udid.tools/robots.txt
+          grep --fixed-strings --quiet 'Disallow: /api/' "${robots}"
+          grep --fixed-strings --quiet 'Disallow: /success' "${robots}"
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --output /dev/null https://www.udid.tools/googleb9f15617438f045c.html
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --output /dev/null https://www.udid.tools/e67fc0a36f388fc28107bace704aae67029e7c53858f74abbad717c694e31052.txt
+          curl --silent --show-error --retry 5 --retry-all-errors --dump-header "${success_headers}" --output /dev/null 'https://www.udid.tools/success?token=invalid-release-smoke-test'
+          grep --ignore-case --extended-regexp --quiet '^x-robots-tag:.*noindex' "${success_headers}"
+          root_url="$(curl --fail --silent --show-error --location --retry 5 --retry-all-errors --output /dev/null --write-out '%{url_effective}' https://udid.tools/)"
+          if [[ "${root_url}" != "https://www.udid.tools/" ]]; then
+            echo "The apex domain does not redirect to the canonical production domain." >&2
+            exit 1
+          fi
