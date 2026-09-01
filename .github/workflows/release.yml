@@ -237,10 +237,10 @@ jobs:
         run: |
           set -euo pipefail
           homepage="${RUNNER_TEMP}/homepage.html"
-          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl / --deployment="${DEPLOYMENT_URL}" --token="${VERCEL_TOKEN}" -- --fail --silent --show-error --output="${homepage}"
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel --token="${VERCEL_TOKEN}" curl / --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --output="${homepage}"
           grep --fixed-strings --quiet "UDID Tools" "${homepage}"
-          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl /googleb9f15617438f045c.html --deployment="${DEPLOYMENT_URL}" --token="${VERCEL_TOKEN}" -- --fail --silent --show-error --output=/dev/null
-          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl /e67fc0a36f388fc28107bace704aae67029e7c53858f74abbad717c694e31052.txt --deployment="${DEPLOYMENT_URL}" --token="${VERCEL_TOKEN}" -- --fail --silent --show-error --output=/dev/null
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel --token="${VERCEL_TOKEN}" curl /googleb9f15617438f045c.html --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --output=/dev/null
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel --token="${VERCEL_TOKEN}" curl /e67fc0a36f388fc28107bace704aae67029e7c53858f74abbad717c694e31052.txt --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --output=/dev/null
       - name: Promote the released deployment to production domains
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
