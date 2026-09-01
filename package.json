@@ -1,6 +1,6 @@
 {
   "name": "@udid-tools/website",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "type": "module",
   "description": "Official UDID Tools website and free Safari-based UDID utility for iPhone and iPad.",
