@@ -223,10 +223,50 @@ jobs:
         run: |
           mkdir .vercel
           tar --extract --gzip --file="release/${ARCHIVE}" --directory=.vercel
-      - name: Deploy without rebuilding
+      - name: Deploy without rebuilding or promoting
         id: deploy
         shell: bash
         run: |
           set -euo pipefail
-          deployment_url="$(npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel deploy --prebuilt --prod --archive=tgz --token="${VERCEL_TOKEN}")"
+          deployment_url="$(npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel deploy --prebuilt --prod --skip-domain --archive=tgz --token="${VERCEL_TOKEN}")"
           echo "url=${deployment_url}" >> "${GITHUB_OUTPUT}"
+      - name: Smoke-test the staged production deployment
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          homepage="${RUNNER_TEMP}/homepage.html"
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl / --deployment="${DEPLOYMENT_URL}" --token="${VERCEL_TOKEN}" -- --fail --silent --show-error --output="${homepage}"
+          grep --fixed-strings --quiet "UDID Tools" "${homepage}"
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl /googleb9f15617438f045c.html --deployment="${DEPLOYMENT_URL}" --token="${VERCEL_TOKEN}" -- --fail --silent --show-error --output=/dev/null
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl /e67fc0a36f388fc28107bace704aae67029e7c53858f74abbad717c694e31052.txt --deployment="${DEPLOYMENT_URL}" --token="${VERCEL_TOKEN}" -- --fail --silent --show-error --output=/dev/null
+      - name: Promote the released deployment to production domains
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel promote "${DEPLOYMENT_URL}" --yes --token="${VERCEL_TOKEN}"
+      - name: Verify the public production domain
+        shell: bash
+        run: |
+          set -euo pipefail
+          headers="${RUNNER_TEMP}/production-headers.txt"
+          robots="${RUNNER_TEMP}/production-robots.txt"
+          success_headers="${RUNNER_TEMP}/production-success-headers.txt"
+          for attempt in {1..6}; do
+            curl --fail --silent --show-error --retry 3 --retry-all-errors --dump-header "${headers}" --output=/dev/null https://www.udid.tools/
+            if grep --ignore-case --quiet '^cross-origin-opener-policy: same-origin' "${headers}" && ! grep --ignore-case --quiet '^x-powered-by:' "${headers}"; then
+              break
+            fi
+            if (( attempt == 6 )); then
+              echo "Production domain still serves the previous deployment." >&2
+              exit 1
+            fi
+            sleep 5
+          done
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --output="${robots}" https://www.udid.tools/robots.txt
+          grep --fixed-strings --quiet 'Disallow: /api/' "${robots}"
+          grep --fixed-strings --quiet 'Disallow: /success' "${robots}"
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --output=/dev/null https://www.udid.tools/googleb9f15617438f045c.html
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --output=/dev/null https://www.udid.tools/e67fc0a36f388fc28107bace704aae67029e7c53858f74abbad717c694e31052.txt
+          curl --silent --show-error --retry 5 --retry-all-errors --dump-header "${success_headers}" --output=/dev/null 'https://www.udid.tools/success?token=invalid-release-smoke-test'
+          grep --ignore-case --extended-regexp --quiet '^x-robots-tag:.*noindex' "${success_headers}"
