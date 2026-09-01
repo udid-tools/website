@@ -110,13 +110,15 @@ export function encryptResultToken(result: DeviceResult): string {
     cipher.final(),
   ]);
   const tag = cipher.getAuthTag();
-  return [
+  const token = [
     TOKEN_VERSION,
     keyring.activeKeyId,
     iv.toString("base64url"),
     ciphertext.toString("base64url"),
     tag.toString("base64url"),
   ].join(".");
+  if (token.length > MAX_TOKEN_LENGTH) throw new Error("Result token exceeds maximum length");
+  return token;
 }
 
 export function decryptResultToken(token: string): DeviceResult {
