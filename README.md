@@ -1,5 +1,7 @@
 # UDID Tools Website
 
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14396/badge)](https://www.bestpractices.dev/projects/14396)
+
 The official [UDID Tools](https://www.udid.tools) marketing website and free Safari-based utility for retrieving an iPhone or iPad UDID. It is also a public integration example for [`@udid-tools/core`](https://github.com/udid-tools/core) and [`@udid-tools/device-info`](https://github.com/udid-tools/device-info).
 
 ## Local development

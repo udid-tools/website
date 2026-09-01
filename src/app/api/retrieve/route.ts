@@ -1,12 +1,32 @@
 import * as Sentry from "@sentry/nextjs";
-import { DEFAULT_LIMITS } from "@udid-tools/core";
+import { DEFAULT_LIMITS, UdidToolsError, type UdidToolsErrorCode } from "@udid-tools/core";
 import { PayloadTooLargeError, readBody } from "@/lib/http";
 import { parseDeviceResponse } from "@/lib/profile-service";
 import type { DeviceResult } from "@/lib/result";
-import { encryptResultToken } from "@/lib/result-token";
+import { encryptResultToken, ResultTokenInputError } from "@/lib/result-token";
 import { publicOrigin } from "@/lib/server-config";
 
 export const runtime = "nodejs";
+
+const CLIENT_INPUT_ERROR_CODES = new Set<UdidToolsErrorCode>([
+  "CHALLENGE_MISMATCH",
+  "INPUT_TOO_LARGE",
+  "INVALID_SIGNATURE",
+  "MALFORMED_CMS",
+  "MALFORMED_PLIST",
+  "MISSING_CHALLENGE",
+  "MISSING_REQUIRED_ATTRIBUTE",
+  "OUTPUT_TOO_LARGE",
+  "UNSUPPORTED_ALGORITHM",
+  "UNTRUSTED_SIGNER",
+]);
+
+function clientErrorStatus(error: unknown) {
+  if (error instanceof PayloadTooLargeError) return 413;
+  if (error instanceof ResultTokenInputError) return 400;
+  if (error instanceof UdidToolsError && CLIENT_INPUT_ERROR_CODES.has(error.code)) return 400;
+  return undefined;
+}
 
 export async function POST(request: Request) {
   try {
@@ -29,13 +49,22 @@ export async function POST(request: Request) {
     // back to Safari after posting the signed device response.
     return Response.redirect(url, 301);
   } catch (error) {
-    const status = error instanceof PayloadTooLargeError ? 413 : 400;
-    Sentry.captureException(error, {
-      tags: { flow: "udid_retrieval", stage: "profile_response", status: String(status) },
-    });
+    const status = clientErrorStatus(error);
+    if (!status) {
+      Sentry.captureException(error, {
+        tags: { flow: "udid_retrieval", stage: "profile_response", status: "500" },
+      });
+    }
     return Response.json(
-      { error: status === 413 ? "Profile response is too large" : "Invalid profile response" },
-      { status, headers: { "Cache-Control": "no-store" } }
+      {
+        error:
+          status === 413
+            ? "Profile response is too large"
+            : status === 400
+              ? "Invalid profile response"
+              : "Profile response processing failed",
+      },
+      { status: status ?? 500, headers: { "Cache-Control": "no-store" } }
     );
   }
 }

@@ -1,8 +1,11 @@
+import * as Sentry from "@sentry/nextjs";
+import { UdidToolsError } from "@udid-tools/core";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   encryptResultToken: vi.fn(() => "encrypted-result"),
   parseDeviceResponse: vi.fn(),
+  ResultTokenInputError: class ResultTokenInputError extends Error {},
 }));
 
 vi.mock("@sentry/nextjs", () => ({
@@ -14,6 +17,7 @@ vi.mock("@/lib/profile-service", () => ({
 }));
 vi.mock("@/lib/result-token", () => ({
   encryptResultToken: mocks.encryptResultToken,
+  ResultTokenInputError: mocks.ResultTokenInputError,
 }));
 vi.mock("@/lib/server-config", () => ({
   publicOrigin: () => "https://www.udid.tools",
@@ -48,5 +52,71 @@ describe("Profile Service response route", () => {
     expect(response.headers.get("location")).toBe(
       "https://www.udid.tools/success?result=encrypted-result"
     );
+  });
+
+  it("returns 400 without reporting malformed client input", async () => {
+    mocks.parseDeviceResponse.mockRejectedValueOnce(
+      new UdidToolsError("MALFORMED_CMS", "The CMS input is malformed.")
+    );
+
+    const response = await POST(
+      new Request("https://www.udid.tools/api/retrieve", { body: "invalid", method: "POST" })
+    );
+
+    expect(response.status).toBe(400);
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("returns 413 without reporting an oversized request body", async () => {
+    const response = await POST(
+      new Request("https://www.udid.tools/api/retrieve", {
+        headers: { "content-length": "999999999" },
+        method: "POST",
+      })
+    );
+
+    expect(response.status).toBe(413);
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("returns 400 without reporting an oversized result token", async () => {
+    mocks.encryptResultToken.mockImplementationOnce(() => {
+      throw new mocks.ResultTokenInputError("Result token exceeds maximum length");
+    });
+
+    const response = await POST(
+      new Request("https://www.udid.tools/api/retrieve", { body: "input", method: "POST" })
+    );
+
+    expect(response.status).toBe(400);
+    expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("reports library configuration failures and returns 500", async () => {
+    const error = new UdidToolsError("INVALID_CONFIGURATION", "Invalid server configuration.");
+    mocks.parseDeviceResponse.mockRejectedValueOnce(error);
+
+    const response = await POST(
+      new Request("https://www.udid.tools/api/retrieve", { body: "input", method: "POST" })
+    );
+
+    expect(response.status).toBe(500);
+    expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+      tags: { flow: "udid_retrieval", stage: "profile_response", status: "500" },
+    });
+  });
+
+  it("reports unexpected server failures and returns 500", async () => {
+    const error = new Error("Unexpected server failure");
+    mocks.parseDeviceResponse.mockRejectedValueOnce(error);
+
+    const response = await POST(
+      new Request("https://www.udid.tools/api/retrieve", { body: "input", method: "POST" })
+    );
+
+    expect(response.status).toBe(500);
+    expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+      tags: { flow: "udid_retrieval", stage: "profile_response", status: "500" },
+    });
   });
 });

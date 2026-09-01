@@ -19,6 +19,13 @@ type SentryEvent = {
 
 export const SENTRY_DSN = process.env["NEXT_PUBLIC_SENTRY_DSN"] ?? process.env["SENTRY_DSN"];
 
+// These signatures come from third-party scripts injected by specific browsers
+// or in-app webviews. Keep this list exact so first-party failures remain visible.
+export const SENTRY_IGNORED_BROWSER_ERRORS = [
+  /Can't find variable: zaloJSV2/u,
+  /Object Not Found Matching Id:\d+, MethodName:update, ParamCount:4/u,
+];
+
 export function stripUrlDetails(value: string) {
   try {
     const url = new URL(value, "https://www.udid.tools");

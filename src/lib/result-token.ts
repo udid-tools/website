@@ -23,6 +23,13 @@ type TokenKeyring = {
   keys: ReadonlyMap<string, Buffer>;
 };
 
+export class ResultTokenInputError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ResultTokenInputError";
+  }
+}
+
 function decodeKey(value: string): Buffer {
   if (!/^[A-Za-z0-9+/]{43}=$/u.test(value)) throw new Error("Invalid result-token key encoding");
   const key = Buffer.from(value, "base64");
@@ -70,11 +77,11 @@ function readKeyring(): TokenKeyring {
 
 function assertDeviceResult(value: unknown): asserts value is DeviceResult {
   if (!value || typeof value !== "object" || Array.isArray(value))
-    throw new Error("Invalid result payload");
+    throw new ResultTokenInputError("Invalid result payload");
   for (const field of ["udid", "imei", "meid", "product", "serial", "version"] as const) {
     const fieldValue = (value as Record<string, unknown>)[field];
     if (typeof fieldValue !== "string" || fieldValue.length > MAX_FIELD_LENGTH) {
-      throw new Error("Invalid result field");
+      throw new ResultTokenInputError("Invalid result field");
     }
   }
 }
@@ -110,13 +117,16 @@ export function encryptResultToken(result: DeviceResult): string {
     cipher.final(),
   ]);
   const tag = cipher.getAuthTag();
-  return [
+  const token = [
     TOKEN_VERSION,
     keyring.activeKeyId,
     iv.toString("base64url"),
     ciphertext.toString("base64url"),
     tag.toString("base64url"),
   ].join(".");
+  if (token.length > MAX_TOKEN_LENGTH)
+    throw new ResultTokenInputError("Result token exceeds maximum length");
+  return token;
 }
 
 export function decryptResultToken(token: string): DeviceResult {
