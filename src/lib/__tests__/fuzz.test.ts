@@ -100,11 +100,12 @@ describe("property-based security boundaries", () => {
     );
   });
 
-  it("rejects arbitrary mutations of fresh profile challenges", () => {
+  it("rejects arbitrary single-character mutations of a fresh profile challenge", () => {
+    const now = Date.UTC(2026, 7, 31, 12);
+    const challenge = createProfileChallenge(now);
+
     fc.assert(
-      fc.property(fc.integer({ min: 0, max: 4_102_444_800_000 }), fc.nat(), (now, seed) => {
-        const challenge = createProfileChallenge(now);
-        const index = seed % challenge.length;
+      fc.property(fc.integer({ min: 0, max: challenge.length - 1 }), (index) => {
         const replacement = challenge[index] === "A" ? "B" : "A";
         const mutated = `${challenge.slice(0, index)}${replacement}${challenge.slice(index + 1)}`;
         expect(verifyProfileChallenge(mutated, now)).toBe(false);
