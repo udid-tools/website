@@ -25,7 +25,9 @@ export async function POST(request: Request) {
     };
     const url = new URL("/success", publicOrigin());
     url.searchParams.set("result", encryptResultToken(result));
-    return Response.redirect(url, 303);
+    // Apple Profile Service clients use a permanent redirect to hand the flow
+    // back to Safari after posting the signed device response.
+    return Response.redirect(url, 301);
   } catch (error) {
     const status = error instanceof PayloadTooLargeError ? 413 : 400;
     Sentry.captureException(error, {

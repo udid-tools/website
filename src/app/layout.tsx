@@ -131,12 +131,15 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       data-scroll-behavior="smooth"
     >
       <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
-          }}
-        />
+        {structuredData.map((entry) => (
+          <script
+            key={entry["@type"]}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify(entry).replace(/</g, "\\u003c"),
+            }}
+          />
+        ))}
       </head>
       <body>
         {children}
