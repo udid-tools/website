@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  SENTRY_IGNORED_BROWSER_ERRORS,
   scrubBreadcrumb,
   scrubSentryEvent,
   stripUrlDetails,
@@ -7,6 +8,18 @@ import {
 } from "@/lib/observability/sentry";
 
 describe("Sentry privacy filters", () => {
+  it("ignores only known third-party browser injection errors", () => {
+    const isIgnored = (message: string) =>
+      SENTRY_IGNORED_BROWSER_ERRORS.some((pattern) => pattern.test(message));
+
+    expect(isIgnored("ReferenceError: Can't find variable: zaloJSV2")).toBe(true);
+    expect(isIgnored("Object Not Found Matching Id:1, MethodName:update, ParamCount:4")).toBe(true);
+    expect(isIgnored("undefined is not an object (evaluating 'r[\"@context\"].toLowerCase')")).toBe(
+      false
+    );
+    expect(isIgnored("NotFoundError: The object can not be found here.")).toBe(false);
+  });
+
   it("removes query strings and fragments from URLs", () => {
     expect(stripUrlDetails("https://www.udid.tools/success?result=secret#details")).toBe(
       "https://www.udid.tools/success"

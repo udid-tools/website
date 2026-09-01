@@ -3,6 +3,7 @@ import "server-only";
 import {
   generateProfile,
   parseProfileServiceResponse,
+  UdidToolsError,
   type GeneratedProfile,
   type ProfileServiceResponse,
 } from "@udid-tools/core";
@@ -43,6 +44,9 @@ export async function parseDeviceResponse(input: ArrayBuffer): Promise<ProfileSe
   });
   if (!result.ok) throw result.error;
   if (!verifyProfileChallenge(result.value.challenge))
-    throw new Error("Invalid or expired profile challenge");
+    throw new UdidToolsError(
+      "CHALLENGE_MISMATCH",
+      "The Profile Service challenge is invalid or expired."
+    );
   return result.value;
 }

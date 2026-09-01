@@ -1,6 +1,6 @@
 import { createCipheriv, randomBytes } from "node:crypto";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { decryptResultToken, encryptResultToken } from "@/lib/result-token";
+import { decryptResultToken, encryptResultToken, ResultTokenInputError } from "@/lib/result-token";
 import { sampleDeviceResult } from "@/lib/result";
 
 const originalKeys = process.env["UDID_TOOLS_RESULT_TOKEN_KEYS"];
@@ -63,7 +63,9 @@ describe("result tokens", () => {
     process.env["UDID_TOOLS_RESULT_TOKEN_KEYS"] = "not-json";
     expect(() => encryptResultToken(sampleDeviceResult)).toThrow(/valid JSON/u);
     process.env["UDID_TOOLS_RESULT_TOKEN_KEYS"] = JSON.stringify({ current: firstKey });
-    expect(() => encryptResultToken({ ...sampleDeviceResult, udid: "x".repeat(513) })).toThrow();
+    expect(() => encryptResultToken({ ...sampleDeviceResult, udid: "x".repeat(513) })).toThrow(
+      ResultTokenInputError
+    );
   });
 
   it("uses a development-only key when no keyring is configured", () => {
