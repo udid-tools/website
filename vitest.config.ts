@@ -14,7 +14,7 @@ export default defineConfig({
     environment: "node",
     coverage: {
       provider: "v8",
-      reporter: ["text", "json-summary"],
+      reporter: ["text", "json-summary", "lcovonly"],
       include: [
         "src/lib/http.ts",
         "src/lib/profile-challenge.ts",

@@ -1,7 +1,12 @@
 # UDID Tools Website
 
-[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14396/badge)](https://www.bestpractices.dev/projects/14396)
+[![CI](https://github.com/udid-tools/website/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/udid-tools/website/actions/workflows/ci.yml)
+[![Security](https://github.com/udid-tools/website/actions/workflows/security.yml/badge.svg?branch=main)](https://github.com/udid-tools/website/actions/workflows/security.yml)
+[![Coverage](https://codecov.io/gh/udid-tools/website/branch/main/graph/badge.svg)](https://codecov.io/gh/udid-tools/website)
+[![Deployment](https://img.shields.io/github/actions/workflow/status/udid-tools/website/release.yml?label=deployment)](https://github.com/udid-tools/website/actions/workflows/release.yml)
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/udid-tools/website/badge)](https://scorecard.dev/viewer/?uri=github.com/udid-tools/website)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14396/badge)](https://www.bestpractices.dev/projects/14396)
+[![License: MIT](https://img.shields.io/github/license/udid-tools/website)](./LICENSE)
 
 The official [UDID Tools](https://www.udid.tools) marketing website and free Safari-based utility for retrieving an iPhone or iPad UDID. It is also a public integration example for [`@udid-tools/core`](https://github.com/udid-tools/core) and [`@udid-tools/device-info`](https://github.com/udid-tools/device-info).
 
