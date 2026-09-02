@@ -12,6 +12,18 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 This repository is the official marketing website and free UDID utility. Preserve its public content, visual design, route structure, and interaction behavior unless a task explicitly authorizes a visible change. Fix genuine security, privacy, accessibility, standards, and compatibility defects.
 
+## Commit and pull request titles
+
+- Every commit subject and pull request title must follow Conventional Commits:
+  `<type>[optional scope][!]: <description>`.
+- Use `fix` for every defect correction, including UI and CSS defects, and `feat` for new
+  behavior. Other appropriate types include `docs`, `refactor`, `test`, `perf`, `build`, `ci`,
+  `chore`, and `revert`.
+- Never use an untyped subject or title such as `Fix ...` or `Update ...`. A bug fix must start
+  with `fix:` or `fix(scope):`.
+- Check both the commit subject and pull request title before pushing or opening the pull request.
+  Keep them compliant when amending or updating an open pull request.
+
 ## Architecture
 
 - Next.js App Router, React, TypeScript, Tailwind CSS, and Node.js 22.14 or newer.
