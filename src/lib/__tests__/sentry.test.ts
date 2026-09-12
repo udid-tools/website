@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   SENTRY_IGNORED_BROWSER_ERRORS,
   scrubBreadcrumb,
+  scrubBrowserSentryEvent,
   scrubSentryEvent,
   stripUrlDetails,
   traceSampleRate,
@@ -18,6 +19,68 @@ describe("Sentry privacy filters", () => {
       false
     );
     expect(isIgnored("NotFoundError: The object can not be found here.")).toBe(false);
+    expect(isIgnored("Cannot read properties of undefined (reading 'M_ID')")).toBe(false);
+  });
+
+  it("drops the confirmed M_ID error only when every sourced frame is extension code", () => {
+    const message = "Cannot read properties of undefined (reading 'M_ID')";
+
+    expect(
+      scrubBrowserSentryEvent({
+        exception: {
+          values: [
+            {
+              value: message,
+              stacktrace: {
+                frames: [
+                  { abs_path: "app:///executors/200.js" },
+                  {
+                    filename:
+                      "chrome-extension://eppiocemhmnlbhjplcgkofciiegomcon/executors/200.js",
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      })
+    ).toBeNull();
+  });
+
+  it("keeps M_ID errors without conclusive extension-only stack evidence", () => {
+    const message = "Cannot read properties of undefined (reading 'M_ID')";
+    const firstPartyEvent = {
+      exception: {
+        values: [
+          {
+            value: message,
+            stacktrace: {
+              frames: [
+                { abs_path: "app:///executors/200.js" },
+                { abs_path: "https://www.udid.tools/_next/static/chunks/app.js" },
+              ],
+            },
+          },
+        ],
+      },
+    };
+    const framelessEvent = {
+      exception: { values: [{ value: message }] },
+    };
+    const differentError = {
+      exception: {
+        values: [
+          {
+            value: "NotFoundError: The object can not be found here.",
+            stacktrace: { frames: [{ abs_path: "app:///executors/200.js" }] },
+          },
+        ],
+      },
+    };
+
+    expect(scrubBrowserSentryEvent(firstPartyEvent)).toBe(firstPartyEvent);
+    expect(scrubBrowserSentryEvent(framelessEvent)).toBe(framelessEvent);
+    expect(scrubBrowserSentryEvent(differentError)).toBe(differentError);
   });
 
   it("removes query strings and fragments from URLs", () => {

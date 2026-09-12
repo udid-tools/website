@@ -3,6 +3,7 @@ import {
   SENTRY_DSN,
   SENTRY_IGNORED_BROWSER_ERRORS,
   scrubBreadcrumb,
+  scrubBrowserSentryEvent,
   scrubSentryEvent,
   traceSampleRate,
 } from "@/lib/observability/sentry";
@@ -16,7 +17,7 @@ Sentry.init({
   ignoreErrors: SENTRY_IGNORED_BROWSER_ERRORS,
   tracesSampler: traceSampleRate,
   beforeBreadcrumb: scrubBreadcrumb,
-  beforeSend: scrubSentryEvent,
+  beforeSend: scrubBrowserSentryEvent,
   beforeSendTransaction: scrubSentryEvent,
 });
 

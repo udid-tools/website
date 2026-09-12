@@ -5,6 +5,14 @@ const URL_KEY = /^(url|referrer|href|from|to)$/i;
 type SentryEvent = {
   breadcrumbs?: Array<{ data?: Record<string, unknown> }>;
   contexts?: Record<string, unknown>;
+  exception?: {
+    values?: Array<{
+      stacktrace?: {
+        frames?: Array<{ abs_path?: string; filename?: string }>;
+      };
+      value?: string;
+    }>;
+  };
   extra?: Record<string, unknown>;
   request?: {
     cookies?: unknown;
@@ -25,6 +33,10 @@ export const SENTRY_IGNORED_BROWSER_ERRORS = [
   /Can't find variable: zaloJSV2/u,
   /Object Not Found Matching Id:\d+, MethodName:update, ParamCount:4/u,
 ];
+
+const EXTENSION_M_ID_ERROR = "Cannot read properties of undefined (reading 'M_ID')";
+const EXTENSION_EXECUTOR_SOURCE =
+  /^(?:(?:chrome|moz|safari-web)-extension:\/\/[^/]+|app:\/\/)\/executors\/200\.js(?:[?#].*)?$/u;
 
 export function stripUrlDetails(value: string) {
   try {
@@ -70,6 +82,23 @@ export function scrubSentryEvent<T extends SentryEvent>(event: T): T {
     );
   }
   return event;
+}
+
+export function scrubBrowserSentryEvent<T extends SentryEvent>(event: T): T | null {
+  const isKnownExtensionError =
+    event.exception?.values?.some((exception) => {
+      if (exception.value !== EXTENSION_M_ID_ERROR) return false;
+
+      const sources = (exception.stacktrace?.frames ?? [])
+        .map((frame) => frame.abs_path ?? frame.filename)
+        .filter((source): source is string => Boolean(source));
+
+      return (
+        sources.length > 0 && sources.every((source) => EXTENSION_EXECUTOR_SOURCE.test(source))
+      );
+    }) ?? false;
+
+  return isKnownExtensionError ? null : scrubSentryEvent(event);
 }
 
 export function scrubBreadcrumb<T extends { data?: Record<string, unknown> }>(breadcrumb: T): T {
