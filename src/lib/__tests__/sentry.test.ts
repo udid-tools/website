@@ -83,6 +83,12 @@ describe("Sentry privacy filters", () => {
     expect(scrubBrowserSentryEvent(differentError)).toBe(differentError);
   });
 
+  it("keeps ordinary events without exception data", () => {
+    const event = { tags: { source: "browser" } };
+
+    expect(scrubBrowserSentryEvent(event)).toBe(event);
+  });
+
   it("removes query strings and fragments from URLs", () => {
     expect(stripUrlDetails("https://www.udid.tools/success?result=secret#details")).toBe(
       "https://www.udid.tools/success"
