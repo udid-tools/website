@@ -1,6 +1,6 @@
 {
   "name": "@udid-tools/website",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "private": true,
   "type": "module",
   "description": "Official UDID Tools website and free Safari-based UDID utility for iPhone and iPad.",
@@ -37,8 +37,8 @@
   },
   "dependencies": {
     "@sentry/nextjs": "10.73.0",
-    "@udid-tools/core": "0.1.0-beta.2",
-    "@udid-tools/device-info": "1.0.0",
+    "@udid-tools/core": "0.1.0-beta.3",
+    "@udid-tools/device-info": "1.0.1",
     "@vercel/analytics": "2.0.1",
     "@vercel/speed-insights": "2.0.0",
     "lucide-react": "1.40.0",
