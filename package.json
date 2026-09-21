@@ -36,17 +36,17 @@
     "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build"
   },
   "dependencies": {
-    "@sentry/nextjs": "10.74.0",
+    "@sentry/nextjs": "10.75.0",
     "@udid-tools/core": "0.1.0-beta.4",
     "@udid-tools/device-info": "1.0.3",
     "@vercel/analytics": "2.0.1",
     "@vercel/speed-insights": "2.0.0",
-    "lucide-react": "1.44.0",
-    "motion": "13.2.0",
-    "next": "16.3.4",
+    "lucide-react": "1.47.0",
+    "motion": "13.4.0",
+    "next": "16.3.5",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "simple-icons": "16.30.0"
+    "simple-icons": "16.31.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
