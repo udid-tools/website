@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { siGithub } from "simple-icons";
 import { Logo } from "@/components/Logo";
+import { getBuildInfo, type BuildInfo } from "@/lib/build-info";
+import { REPOSITORY_URL } from "@/lib/site";
+
+const sourceLinkClassName =
+  "underline decoration-slate-400 underline-offset-2 transition-colors hover:text-slate-900 focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600";
 
 function GithubIcon() {
   return (
@@ -15,7 +20,43 @@ function GithubIcon() {
   );
 }
 
+function SourceReference({ buildInfo }: { buildInfo: BuildInfo }) {
+  const commitLink = (
+    <a
+      href={buildInfo.commitUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={sourceLinkClassName}
+      aria-label={`View source commit ${buildInfo.sourceSha} on GitHub`}
+    >
+      commit <code className="font-mono">{buildInfo.shortSourceSha}</code>
+    </a>
+  );
+
+  if (buildInfo.environment === "preview") {
+    return <p className="text-xs text-slate-600">Preview source: {commitLink}</p>;
+  }
+
+  return (
+    <p className="text-xs text-slate-600">
+      Deployed source:{" "}
+      <a
+        href={buildInfo.releaseUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={sourceLinkClassName}
+        aria-label={`View GitHub release ${buildInfo.releaseTag}`}
+      >
+        {buildInfo.releaseTag}
+      </a>{" "}
+      <span aria-hidden="true">·</span> {commitLink}
+    </p>
+  );
+}
+
 export function Footer() {
+  const buildInfo = getBuildInfo();
+
   return (
     <footer className="w-full border-t border-slate-100 bg-slate-50/50">
       <div className="mx-auto max-w-6xl px-6 py-12">
@@ -26,7 +67,7 @@ export function Footer() {
           </p>
           <div className="flex items-center gap-4">
             <a
-              href="https://github.com/udid-tools/website"
+              href={REPOSITORY_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 transition-colors hover:bg-slate-200"
@@ -48,10 +89,16 @@ export function Footer() {
           </div>
         </div>
         <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-slate-200 pt-8 sm:flex-row">
-          <p className="text-xs text-slate-600">
-            &copy; {new Date().getFullYear()} UDID Tools. All rights reserved.
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
+          <div className="flex flex-col items-center gap-2 text-center sm:items-start sm:text-left">
+            <p className="text-xs text-slate-600">
+              &copy; {new Date().getFullYear()} UDID Tools. All rights reserved.
+            </p>
+            {buildInfo ? <SourceReference buildInfo={buildInfo} /> : null}
+          </div>
+          <nav
+            aria-label="Footer navigation"
+            className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3"
+          >
             <Link
               href="/guides"
               className="text-xs text-slate-600 transition-colors hover:text-slate-900"
@@ -70,7 +117,7 @@ export function Footer() {
             >
               Terms of Service
             </Link>
-          </div>
+          </nav>
         </div>
       </div>
     </footer>

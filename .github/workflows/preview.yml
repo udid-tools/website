@@ -32,6 +32,21 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Validate preview source metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha="$(git rev-parse 'HEAD^{commit}')"
+          trigger_sha="$(git rev-parse "${GITHUB_SHA}^{commit}")"
+          if [[ ! "${source_sha}" =~ ^[0-9a-f]{40}$ || "${source_sha}" != "${trigger_sha}" ]]; then
+            echo "The checked-out preview source does not match the workflow trigger." >&2
+            exit 1
+          fi
+          {
+            echo "NEXT_PUBLIC_UDID_TOOLS_SOURCE_SHA=${source_sha}"
+            echo "NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA=${source_sha}"
+            echo "VERCEL_GIT_COMMIT_SHA=${source_sha}"
+          } >> "${GITHUB_ENV}"
       - name: Set up Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
@@ -48,9 +63,7 @@ jobs:
       - name: Build preview output
         env:
           NEXT_PUBLIC_VERCEL_ENV: preview
-          NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
           VERCEL_ENV: preview
-          VERCEL_GIT_COMMIT_SHA: ${{ github.sha }}
         run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel build --token="${VERCEL_TOKEN}"
       - name: Deploy prebuilt preview
         id: deploy
@@ -59,6 +72,20 @@ jobs:
           set -euo pipefail
           deployment_url="$(npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel deploy --prebuilt --archive=tgz --token="${VERCEL_TOKEN}")"
           echo "url=${deployment_url}" >> "${GITHUB_OUTPUT}"
+      - name: Verify preview source reference
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          homepage="${RUNNER_TEMP}/preview-homepage.html"
+          npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl / --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --output "${homepage}"
+          grep --fixed-strings --quiet "Preview source:" "${homepage}"
+          grep --fixed-strings --quiet "https://github.com/udid-tools/website/commit/${NEXT_PUBLIC_UDID_TOOLS_SOURCE_SHA}" "${homepage}"
+          if grep --fixed-strings --quiet "Deployed source:" "${homepage}"; then
+            echo "Preview deployment incorrectly claims to be a production release." >&2
+            exit 1
+          fi
       - name: Point the stable preview domain to this deployment
         id: alias
         env:

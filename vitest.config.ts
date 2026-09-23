@@ -16,6 +16,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json-summary", "lcovonly"],
       include: [
+        "src/lib/build-info.ts",
         "src/lib/http.ts",
         "src/lib/profile-challenge.ts",
         "src/lib/result-token.ts",
