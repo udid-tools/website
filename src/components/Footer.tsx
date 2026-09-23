@@ -21,7 +21,7 @@ export function Footer() {
       <div className="mx-auto max-w-6xl px-6 py-12">
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
           <Logo />
-          <p className="text-sm text-slate-600">
+          <p className="text-center text-sm text-slate-600 md:text-left">
             Open-source • No account required • Built for developers
           </p>
           <div className="flex items-center gap-4">
