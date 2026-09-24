@@ -54,7 +54,7 @@ export function HeroSection() {
               href="/api/register.signed.mobileconfig"
               className="group inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3.5 font-medium text-white shadow-lg shadow-slate-900/10 transition-all hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/15"
             >
-              Get iPhone UDID{" "}
+              Get UDID{" "}
               <ArrowRight
                 className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
                 aria-hidden="true"
