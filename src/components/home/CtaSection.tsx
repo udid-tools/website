@@ -46,7 +46,7 @@ export function CtaSection() {
             href="/api/register.signed.mobileconfig"
             className="group inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 font-semibold text-slate-900 shadow-xl transition-all hover:bg-slate-50"
           >
-            Get iPhone UDID Now{" "}
+            Get UDID Now{" "}
             <ArrowRight
               className="h-5 w-5 transition-transform group-hover:translate-x-0.5"
               aria-hidden="true"
