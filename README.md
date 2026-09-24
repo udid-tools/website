@@ -40,6 +40,9 @@ sha256sum --check website-v1.0.0.vercel-output.tar.gz.sha256
 ```
 
 Production deployment rebuilds nothing: Vercel receives the verified release artifact through `vercel deploy --prebuilt`.
+The release build also embeds its validated signed tag and exact commit SHA in that artifact. The
+footer links the tag to the corresponding GitHub Release and the full SHA to the immutable commit;
+preview builds show only their commit, while local builds make no deployment-source claim.
 
 ## Security
 

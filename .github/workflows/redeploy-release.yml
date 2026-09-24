@@ -59,8 +59,18 @@ jobs:
             exit 1
           fi
           tag_object_sha="$(jq --raw-output '.object.sha' <<< "${ref_json}")"
-          if [[ "$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object_sha}" --jq '.verification.verified')" != "true" ]]; then
+          tag_json="$(gh api "repos/${GITHUB_REPOSITORY}/git/tags/${tag_object_sha}")"
+          if [[ "$(jq --raw-output '.verification.verified' <<< "${tag_json}")" != "true" ]]; then
             echo "GitHub did not verify the release tag signature." >&2
+            exit 1
+          fi
+          if [[ "$(jq --raw-output '.object.type' <<< "${tag_json}")" != "commit" ]]; then
+            echo "The annotated release tag must point directly to a commit." >&2
+            exit 1
+          fi
+          source_sha="$(jq --raw-output '.object.sha' <<< "${tag_json}")"
+          if [[ ! "${source_sha}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "The release tag does not resolve to a valid commit SHA." >&2
             exit 1
           fi
           release_json="$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isDraft,isPrerelease)"
@@ -74,6 +84,8 @@ jobs:
           test -f "release/${archive}"
           test -f "release/${archive}.sha256"
           echo "archive=${archive}" >> "${GITHUB_OUTPUT}"
+          echo "release_tag=${RELEASE_TAG}" >> "${GITHUB_OUTPUT}"
+          echo "source_sha=${source_sha}" >> "${GITHUB_OUTPUT}"
       - name: Verify checksum and signed provenance
         env:
           ARCHIVE: ${{ steps.release.outputs.archive }}
@@ -101,6 +113,8 @@ jobs:
       - name: Smoke-test the staged production deployment
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+          SOURCE_SHA: ${{ steps.release.outputs.source_sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -110,6 +124,9 @@ jobs:
           # The curl subcommand forwards explicit token flags to system curl; authenticate through VERCEL_TOKEN.
           npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel curl / --deployment="${DEPLOYMENT_URL}" -- --fail --silent --show-error --dump-header "${headers}" --output "${homepage}"
           grep --fixed-strings --quiet "UDID Tools" "${homepage}"
+          grep --fixed-strings --quiet "Deployed source:" "${homepage}"
+          grep --fixed-strings --quiet "https://github.com/udid-tools/website/releases/tag/${RELEASE_TAG}" "${homepage}"
+          grep --fixed-strings --quiet "https://github.com/udid-tools/website/commit/${SOURCE_SHA}" "${homepage}"
           grep --ignore-case --quiet '^cross-origin-opener-policy: same-origin' "${headers}"
           if grep --ignore-case --quiet '^x-powered-by:' "${headers}"; then
             echo "Staged deployment does not contain the expected website build." >&2
@@ -125,15 +142,22 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
         run: npm exec --yes --package="vercel@${VERCEL_CLI_VERSION}" -- vercel promote "${DEPLOYMENT_URL}" --yes --token="${VERCEL_TOKEN}"
       - name: Verify the public production domains
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release_tag }}
+          SOURCE_SHA: ${{ steps.release.outputs.source_sha }}
         shell: bash
         run: |
           set -euo pipefail
           headers="${RUNNER_TEMP}/production-headers.txt"
+          homepage="${RUNNER_TEMP}/production-homepage.html"
           robots="${RUNNER_TEMP}/production-robots.txt"
           success_headers="${RUNNER_TEMP}/production-success-headers.txt"
           for attempt in {1..6}; do
-            curl --fail --silent --show-error --retry 3 --retry-all-errors --dump-header "${headers}" --output /dev/null https://www.udid.tools/
-            if grep --ignore-case --quiet '^cross-origin-opener-policy: same-origin' "${headers}" && ! grep --ignore-case --quiet '^x-powered-by:' "${headers}"; then
+            curl --fail --silent --show-error --retry 3 --retry-all-errors --dump-header "${headers}" --output "${homepage}" https://www.udid.tools/
+            if grep --ignore-case --quiet '^cross-origin-opener-policy: same-origin' "${headers}" &&
+              ! grep --ignore-case --quiet '^x-powered-by:' "${headers}" &&
+              grep --fixed-strings --quiet "https://github.com/udid-tools/website/releases/tag/${RELEASE_TAG}" "${homepage}" &&
+              grep --fixed-strings --quiet "https://github.com/udid-tools/website/commit/${SOURCE_SHA}" "${homepage}"; then
               break
             fi
             if (( attempt == 6 )); then
@@ -142,6 +166,9 @@ jobs:
             fi
             sleep 5
           done
+          grep --fixed-strings --quiet "Deployed source:" "${homepage}"
+          grep --fixed-strings --quiet "https://github.com/udid-tools/website/releases/tag/${RELEASE_TAG}" "${homepage}"
+          grep --fixed-strings --quiet "https://github.com/udid-tools/website/commit/${SOURCE_SHA}" "${homepage}"
           curl --fail --silent --show-error --retry 5 --retry-all-errors --output "${robots}" https://www.udid.tools/robots.txt
           grep --fixed-strings --quiet 'Disallow: /api/' "${robots}"
           grep --fixed-strings --quiet 'Disallow: /success' "${robots}"
