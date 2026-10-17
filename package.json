@@ -37,30 +37,50 @@
   },
   "dependencies": {
     "@sentry/nextjs": "10.75.0",
-    "@udid-tools/core": "0.1.0-beta.7",
-    "@udid-tools/device-info": "1.0.6",
+    "@udid-tools/core": "0.1.0-beta.11",
+    "@udid-tools/device-info": "1.0.8",
     "@vercel/analytics": "2.0.1",
     "@vercel/speed-insights": "2.0.0",
     "lucide-react": "1.48.0",
     "motion": "13.4.3",
-    "next": "16.3.6",
+    "next": "16.4.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "simple-icons": "16.32.0"
   },
   "devDependencies": {
+    "@eslint-community/eslint-utils": "4.10.1",
+    "@eslint/compat": "2.1.1",
+    "@next/eslint-plugin-next": "14.2.35",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.13.6",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitest/coverage-v8": "4.1.11",
     "eslint": "9.39.5",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.4.2",
     "fast-check": "4.10.2",
     "prettier": "3.9.9",
     "prettier-plugin-tailwindcss": "0.8.1",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
     "vitest": "4.1.11"
+  },
+  "overrides": {
+    "eslint-config-next@16.4.2": {
+      "@next/eslint-plugin-next": "14.2.35"
+    },
+    "glob@10.3.10": "10.5.0",
+    "minimatch@3.1.5": {
+      "brace-expansion": "1.1.21"
+    },
+    "minimatch@9.0.9": {
+      "brace-expansion": "2.1.7"
+    },
+    "minimatch@10.2.6": {
+      "brace-expansion": "5.0.12"
+    },
+    "sharp": "0.35.5",
+    "source-map-js": "1.2.2"
   }
 }
