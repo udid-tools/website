@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@sentry/nextjs": "10.75.0",
-    "@udid-tools/core": "0.1.0-beta.10",
+    "@udid-tools/core": "0.1.0-beta.11",
     "@udid-tools/device-info": "1.0.8",
     "@vercel/analytics": "2.0.1",
     "@vercel/speed-insights": "2.0.0",
