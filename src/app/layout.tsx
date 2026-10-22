@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import type { ReactNode } from "react";
 import { PublicTelemetry } from "@/components/PublicTelemetry";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { SITE_HOME_URL, SITE_NAME } from "@/lib/site";
+import { SITE_STRUCTURED_DATA } from "@/lib/site-structured-data";
 import "./globals.css";
 
 const isPreviewDeployment = process.env["VERCEL_ENV"] === "preview";
@@ -18,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL(SITE_HOME_URL),
   manifest: "/site.webmanifest",
   title: {
     default: "Get iPhone UDID Online - No iTunes or Xcode",
@@ -38,10 +39,10 @@ export const metadata: Metadata = {
     "iOS UDID",
     "Apple device identifier",
   ],
-  alternates: { canonical: SITE_URL },
+  alternates: { canonical: SITE_HOME_URL },
   openGraph: {
     type: "website",
-    url: SITE_URL,
+    url: SITE_HOME_URL,
     siteName: SITE_NAME,
     title: "Get iPhone UDID Online - No iTunes or Xcode",
     description:
@@ -97,32 +98,6 @@ export const metadata: Metadata = {
   applicationName: SITE_NAME,
 };
 
-const structuredData = [
-  {
-    "@context": "https://schema.org",
-    "@type": "WebSite",
-    name: SITE_NAME,
-    url: SITE_URL,
-    description: "UDID Tools helps you find your iPhone and iPad UDID online in Safari.",
-  },
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    name: SITE_NAME,
-    url: SITE_URL,
-    applicationCategory: "DeveloperApplication",
-    operatingSystem: "iOS, iPadOS",
-    offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
-    creator: {
-      "@type": "Person",
-      name: "Alexander Tartmin",
-      url: "https://www.linkedin.com/in/alexandertartmin",
-    },
-    description:
-      "A free open-source utility for retrieving an iPhone or iPad UDID through Safari using an iOS configuration profile flow.",
-  },
-];
-
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
@@ -131,7 +106,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       data-scroll-behavior="smooth"
     >
       <head>
-        {structuredData.map((entry) => (
+        {SITE_STRUCTURED_DATA.map((entry) => (
           <script
             key={entry["@type"]}
             type="application/ld+json"
