@@ -36,7 +36,7 @@
     "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build"
   },
   "dependencies": {
-    "@sentry/nextjs": "10.76.2",
+    "@sentry/nextjs": "11.8.0",
     "@udid-tools/core": "0.1.0-beta.11",
     "@udid-tools/device-info": "1.0.8",
     "@vercel/analytics": "2.0.1",
