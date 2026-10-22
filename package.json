@@ -41,12 +41,12 @@
     "@udid-tools/device-info": "1.0.8",
     "@vercel/analytics": "2.0.1",
     "@vercel/speed-insights": "2.0.0",
-    "lucide-react": "1.48.0",
+    "lucide-react": "1.59.0",
     "motion": "14.4.0",
     "next": "16.4.2",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
-    "simple-icons": "16.32.0"
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "simple-icons": "16.35.0"
   },
   "devDependencies": {
     "@eslint-community/eslint-utils": "4.10.1",
