@@ -67,5 +67,7 @@ describe("Footer", () => {
 
     expect(html).not.toContain("Deployed source:");
     expect(html).not.toContain("Preview source:");
+    expect(html).toContain('aria-label="Alexander Tartmin on LinkedIn"');
+    expect(html).not.toContain(">in</span>");
   });
 });

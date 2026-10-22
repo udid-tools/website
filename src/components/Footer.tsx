@@ -20,6 +20,24 @@ function GithubIcon() {
   );
 }
 
+function ProfileIcon() {
+  return (
+    <svg
+      className="h-4 w-4 text-slate-700"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <circle cx="12" cy="8" r="3" />
+      <path d="M5.5 21a6.5 6.5 0 0 1 13 0" />
+    </svg>
+  );
+}
+
 function SourceReference({ buildInfo }: { buildInfo: BuildInfo }) {
   const commitLink = (
     <a
@@ -82,9 +100,7 @@ export function Footer() {
               className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 transition-colors hover:bg-slate-200"
               aria-label="Alexander Tartmin on LinkedIn"
             >
-              <span className="text-sm font-bold text-slate-700" aria-hidden="true">
-                in
-              </span>
+              <ProfileIcon />
             </a>
           </div>
         </div>

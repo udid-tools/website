@@ -1,10 +1,25 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, CheckCircle2, BookOpen } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { getGuide, guides } from "@/content/guides";
+import { absoluteGuideUrl, buildGuideStructuredData } from "@/lib/guide-structured-data";
+import { SITE_NAME } from "@/lib/site";
+import { SITE_AUTHOR } from "@/lib/site-structured-data";
+
+function toIsoDate(date: string) {
+  return `${date}T00:00:00.000Z`;
+}
+
+function formatDate(date: string) {
+  return new Intl.DateTimeFormat("en", {
+    dateStyle: "long",
+    timeZone: "UTC",
+  }).format(new Date(toIsoDate(date)));
+}
 
 type GuidePageProps = {
   params: Promise<{
@@ -24,24 +39,37 @@ export async function generateMetadata({ params }: GuidePageProps): Promise<Meta
     return {};
   }
 
+  const pageUrl = absoluteGuideUrl(guide.slug);
+
   return {
     title: guide.metaTitle,
     description: guide.description,
+    authors: [{ name: SITE_AUTHOR.name, url: SITE_AUTHOR.url }],
     alternates: {
       canonical: `/guides/${guide.slug}`,
     },
     openGraph: {
       title: `${guide.metaTitle} · UDID Tools`,
       description: guide.description,
-      url: `/guides/${guide.slug}`,
+      url: pageUrl,
       type: "article",
-      images: [],
+      publishedTime: toIsoDate(guide.publishedAt),
+      modifiedTime: toIsoDate(guide.updatedAt ?? guide.publishedAt),
+      authors: [SITE_AUTHOR.url],
+      images: [
+        {
+          url: "/og-image.png",
+          width: 1200,
+          height: 630,
+          alt: `${guide.title} — ${SITE_NAME}`,
+        },
+      ],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: `${guide.metaTitle} · UDID Tools`,
       description: guide.description,
-      images: [],
+      images: ["/og-image.png"],
     },
   };
 }
@@ -54,8 +82,23 @@ export default async function GuidePage({ params }: GuidePageProps) {
     notFound();
   }
 
+  const relatedGuides = (guide.relatedGuideSlugs ?? []).flatMap((relatedSlug) => {
+    const relatedGuide = getGuide(relatedSlug);
+    return relatedGuide ? [relatedGuide] : [];
+  });
+  const structuredData = buildGuideStructuredData(guide);
+
   return (
     <div className="min-h-screen bg-white font-sans">
+      {structuredData.map((entry) => (
+        <script
+          key={entry["@type"]}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(entry).replace(/</g, "\\u003c"),
+          }}
+        />
+      ))}
       <Header />
 
       <main className="bg-gradient-to-b from-slate-50/70 to-white">
@@ -76,7 +119,33 @@ export default async function GuidePage({ params }: GuidePageProps) {
               {guide.title}
             </h1>
             <p className="mt-7 max-w-3xl text-lg leading-8 text-slate-600">{guide.intro}</p>
+            <p className="mt-5 text-sm text-slate-500">
+              By{" "}
+              <a
+                href={SITE_AUTHOR.url}
+                className="font-medium text-slate-700 underline decoration-slate-300 underline-offset-4 hover:text-blue-700"
+              >
+                {SITE_AUTHOR.name}
+              </a>
+              {" · "}Published {formatDate(guide.publishedAt)}
+              {guide.updatedAt ? ` · Updated ${formatDate(guide.updatedAt)}` : ""}
+            </p>
           </header>
+
+          {guide.visual ? (
+            <figure className="overflow-hidden rounded-2xl border border-blue-100 bg-slate-50 shadow-sm shadow-blue-100/50">
+              <Image
+                src={guide.visual.src}
+                alt={guide.visual.alt}
+                width={guide.visual.width}
+                height={guide.visual.height}
+                className="h-auto w-full"
+              />
+              <figcaption className="border-t border-blue-100 bg-white px-5 py-4 text-sm leading-6 text-slate-600">
+                {guide.visual.caption}
+              </figcaption>
+            </figure>
+          ) : null}
 
           <div className="space-y-7 py-12">
             {guide.sections.map((section) => (
@@ -107,6 +176,36 @@ export default async function GuidePage({ params }: GuidePageProps) {
                     ))}
                   </ul>
                 )}
+                {section.table && (
+                  <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                    <table className="min-w-full border-collapse text-left text-sm">
+                      <caption className="sr-only">{section.table.caption}</caption>
+                      <thead className="bg-slate-50 text-slate-900">
+                        <tr>
+                          {section.table.headers.map((header) => (
+                            <th key={header} scope="col" className="px-4 py-3 font-semibold">
+                              {header}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {section.table.rows.map((row) => (
+                          <tr key={row.join("|")} className="align-top">
+                            {row.map((cell, index) => (
+                              <td
+                                key={`${index}-${cell}`}
+                                className="px-4 py-3 leading-6 text-slate-600 first:font-medium first:text-slate-900"
+                              >
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </section>
             ))}
 
@@ -126,9 +225,8 @@ export default async function GuidePage({ params }: GuidePageProps) {
                   <a
                     href="/api/register.signed.mobileconfig"
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-medium text-slate-900 transition-all hover:bg-slate-50"
-                    aria-label="Download configuration profile to extract UDID"
                   >
-                    Get UDID now
+                    Get iPhone UDID
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </a>
                   <Link
@@ -154,6 +252,55 @@ export default async function GuidePage({ params }: GuidePageProps) {
                 ))}
               </div>
             </section>
+
+            {guide.sources && (
+              <section className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-100 md:p-8">
+                <h2 className="text-2xl font-semibold tracking-tight text-slate-900">Sources</h2>
+                <ul className="mt-6 space-y-3 text-sm leading-6 text-slate-600">
+                  {guide.sources.map((source) => (
+                    <li key={source.url}>
+                      <a
+                        href={source.url}
+                        className="font-medium text-blue-700 underline decoration-blue-200 underline-offset-4 hover:text-blue-900"
+                      >
+                        {source.title}
+                      </a>{" "}
+                      <span>— {source.publisher}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {relatedGuides.length > 0 ? (
+              <nav
+                aria-labelledby="related-guides-heading"
+                className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm shadow-slate-100 md:p-8"
+              >
+                <h2
+                  id="related-guides-heading"
+                  className="text-2xl font-semibold tracking-tight text-slate-900"
+                >
+                  Related UDID guides
+                </h2>
+                <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+                  {relatedGuides.map((relatedGuide) => (
+                    <li key={relatedGuide.slug}>
+                      <Link
+                        href={`/guides/${relatedGuide.slug}`}
+                        className="group flex h-full items-center justify-between gap-4 rounded-xl border border-slate-200 p-4 font-medium text-slate-800 transition-colors hover:border-blue-200 hover:bg-blue-50/50 hover:text-blue-800"
+                      >
+                        <span>{relatedGuide.title}</span>
+                        <ArrowRight
+                          className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5"
+                          aria-hidden="true"
+                        />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ) : null}
           </div>
         </article>
       </main>
