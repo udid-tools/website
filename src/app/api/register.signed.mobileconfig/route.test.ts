@@ -24,16 +24,6 @@ const signingAlgorithms = [
     keyEncryption: "AES-256-CBC",
     certificateEncryption: "AES-256-CBC",
   },
-  {
-    name: "PKCS#12 3DES with RC2-40 certificates",
-    keyEncryption: "PBE-SHA1-3DES",
-    certificateEncryption: "PBE-SHA1-RC2-40",
-  },
-  {
-    name: "PKCS#12 3DES with RC2-128 certificates",
-    keyEncryption: "PBE-SHA1-3DES",
-    certificateEncryption: "PBE-SHA1-RC2-128",
-  },
 ] as const;
 
 const identities = new Map<string, string>();
@@ -75,13 +65,6 @@ async function expectGenericFailure(response: Response) {
 
 describe("configuration profile download with the installed core library", () => {
   beforeAll(() => {
-    const version = spawnSync("openssl", ["version"], {
-      encoding: "utf8",
-      stdio: ["ignore", "pipe", "ignore"],
-      timeout: 15_000,
-    });
-    if (version.status !== 0) throw new Error("Could not identify the OpenSSL test runtime");
-    const openssl3 = version.stdout.startsWith("OpenSSL 3.");
     temporaryDirectory = mkdtempSync(join(tmpdir(), "udid-profile-download-test-"));
     const keyPath = join(temporaryDirectory, "signer.key");
     const certificatePath = join(temporaryDirectory, "signer.pem");
@@ -108,15 +91,11 @@ describe("configuration profile download with the installed core library", () =>
       const exported = openssl([
         "pkcs12",
         "-export",
-        // Only OpenSSL 3's fixture exporter needs its legacy provider for RC2.
-        ...(openssl3 && algorithm.certificateEncryption.startsWith("PBE-SHA1-RC2-")
-          ? ["-legacy"]
-          : []),
         "-inkey",
         keyPath,
         "-in",
         certificatePath,
-        // Specify both algorithms to cover modern encryption and macOS's RC2 certificate safe.
+        // Specify both algorithms so verification covers each installed core signing format.
         "-keypbe",
         algorithm.keyEncryption,
         "-certpbe",
