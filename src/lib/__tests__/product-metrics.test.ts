@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/nextjs";
+import SentrySdk, * as Sentry from "@sentry/nextjs";
 import { after } from "next/server";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -250,6 +250,42 @@ describe("privacy-limited product counters", () => {
         },
       ],
     ]);
+  });
+
+  it("preserves caller identity and attributes when the SDK reuses the isolation scope", async () => {
+    const isolation = Sentry.getIsolationScope();
+    isolation.setUser({ id: "private-test-marker" });
+    isolation.setAttribute("private_scope", "private-test-marker");
+    isolation.setAttribute("outcome", "private-test-marker");
+    vi.spyOn(SentrySdk, "withIsolationScope").mockImplementationOnce(((
+      callback: (scope: Sentry.Scope) => unknown
+    ) => callback(isolation)) as typeof Sentry.withIsolationScope);
+
+    recordProfileRequest("success", "GET");
+
+    const metrics = await capturedMetrics();
+    expect(metrics.map(attributesOf)).toEqual([{ outcome: "success", http_method: "GET" }]);
+    expect(JSON.stringify(metrics)).not.toContain("private-test-marker");
+    expect(isolation.getUser()).toEqual({ id: "private-test-marker" });
+    expect(isolation.getScopeData().attributes).toEqual({
+      private_scope: "private-test-marker",
+      outcome: "private-test-marker",
+    });
+    expect(after).toHaveBeenCalledTimes(1);
+  });
+
+  it("records a metric when SDK scope data omits its optional attributes", async () => {
+    const global = Sentry.getGlobalScope();
+    const scopeData = { ...global.getScopeData() };
+    delete scopeData.attributes;
+    vi.spyOn(global, "getScopeData").mockReturnValue(scopeData);
+
+    recordProfileResponse("accepted", 301);
+
+    expect((await capturedMetrics()).map(attributesOf)).toEqual([
+      { outcome: "accepted", http_status: 301 },
+    ]);
+    expect(after).toHaveBeenCalledTimes(1);
   });
 
   it("drops unknown values and arbitrary fields before reaching the SDK", async () => {

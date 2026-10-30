@@ -52,6 +52,19 @@ npm audit signatures
 
 Coverage gates match the organization baseline at 90% for lines, statements, functions, and branches. Do not weaken pinned GitHub Action SHAs, CodeQL, dependency review, Scorecard, release attestations, or exact-artifact deployment.
 
+## Pull request review
+
+- Always read the Codecov bot comment and check the Codecov results for every pull request,
+  including pull requests you have just opened yourself.
+- After each push, wait for the Codecov report for the latest PR commit and inspect patch
+  coverage, uncovered lines, and partially covered branches. A passing Codecov check does
+  not replace reading the report.
+- Address meaningful coverage gaps with relevant tests, or explain why a reported gap does
+  not warrant a test. Do not weaken coverage thresholds or hide code from coverage to make
+  the report pass.
+- Before reporting a PR ready or continuing the release flow, confirm that you reviewed
+  the latest Codecov report. If the report is missing or still pending, state that explicitly.
+
 ## Releases
 
 Releases require a GitHub-verified signed annotated tag. Build `.vercel/output` once, generate checksum and SBOM, attest it with Sigstore, publish every verification asset, and deploy that exact archive with `vercel deploy --prebuilt`. Never rebuild between release and production deployment. Do not commit, push, tag, publish, or deploy unless the repository owner explicitly requests it.
