@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { scrubProductMetric } from "@/lib/observability/product-metrics";
 import {
   SENTRY_DSN,
   scrubBreadcrumb,
@@ -17,4 +18,5 @@ Sentry.init({
   beforeBreadcrumb: scrubBreadcrumb,
   beforeSend: scrubSentryEvent,
   beforeSendTransaction: scrubSentryEvent,
+  beforeSendMetric: scrubProductMetric,
 });

@@ -1,6 +1,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { DEFAULT_LIMITS, UdidToolsError, type UdidToolsErrorCode } from "@udid-tools/core";
 import { PayloadTooLargeError, readBody } from "@/lib/http";
+import { recordProfileResponse } from "@/lib/observability/product-metrics";
 import { parseDeviceResponse } from "@/lib/profile-service";
 import type { DeviceResult } from "@/lib/result";
 import { encryptResultToken, ResultTokenInputError } from "@/lib/result-token";
@@ -47,9 +48,12 @@ export async function POST(request: Request) {
     url.searchParams.set("result", encryptResultToken(result));
     // Apple Profile Service clients use a permanent redirect to hand the flow
     // back to Safari after posting the signed device response.
-    return Response.redirect(url, 301);
+    const redirect = Response.redirect(url, 301);
+    recordProfileResponse("accepted", 301);
+    return redirect;
   } catch (error) {
     const status = clientErrorStatus(error);
+    recordProfileResponse(status ? "rejected" : "error", status ?? 500);
     if (!status) {
       Sentry.captureException(error, {
         tags: { flow: "udid_retrieval", stage: "profile_response", status: "500" },

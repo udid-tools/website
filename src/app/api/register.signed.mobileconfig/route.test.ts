@@ -10,8 +10,12 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
   startSpan: vi.fn((_options: unknown, callback: () => unknown) => callback()),
 }));
+vi.mock("@/lib/observability/product-metrics", () => ({
+  recordProfileRequest: vi.fn(),
+}));
 
 import { GET } from "@/app/api/register.signed.mobileconfig/route";
+import { recordProfileRequest } from "@/lib/observability/product-metrics";
 
 const signingAlgorithms = [
   {
@@ -40,7 +44,11 @@ function openssl(args: string[], input?: Buffer) {
   });
 }
 
-function expectDownloadHeaders(response: Response) {
+function profileRequest(method: "GET" | "HEAD" = "GET") {
+  return new Request("http://localhost:3000/api/register.signed.mobileconfig", { method });
+}
+
+function expectDownloadHeaders(response: Response, method: "GET" | "HEAD" = "GET") {
   expect(response.status).toBe(200);
   expect(response.headers.get("content-type")).toBe("application/x-apple-aspen-config");
   expect(response.headers.get("cache-control")).toBe("no-store");
@@ -48,13 +56,15 @@ function expectDownloadHeaders(response: Response) {
     'attachment; filename="register.signed.mobileconfig"'
   );
   expect(response.headers.get("x-content-type-options")).toBe("nosniff");
+  expect(recordProfileRequest).toHaveBeenCalledExactlyOnceWith("success", method);
 }
 
-async function expectGenericFailure(response: Response) {
+async function expectGenericFailure(response: Response, method: "GET" | "HEAD" = "GET") {
   expect(response.status).toBe(500);
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(response.headers.get("content-type")).toBe("text/plain; charset=utf-8");
   expect(await response.text()).toBe("Internal Server Error");
+  expect(recordProfileRequest).toHaveBeenCalledExactlyOnceWith("error", method);
   expect(Sentry.captureException).toHaveBeenCalledTimes(1);
   const report = vi.mocked(Sentry.captureException).mock.calls[0];
   expect(report?.[0] instanceof Error).toBe(true);
@@ -133,7 +143,7 @@ describe("configuration profile download with the installed core library", () =>
   });
 
   it("downloads a valid unsigned Profile Service plist in local development", async () => {
-    const response = await GET();
+    const response = await GET(profileRequest());
 
     expectDownloadHeaders(response);
     const profile = await response.text();
@@ -142,6 +152,12 @@ describe("configuration profile download with the installed core library", () =>
     expect(profile.includes("<string>Profile Service</string>")).toBe(true);
     expect(profile.includes("<string>http://localhost:3000/api/retrieve</string>")).toBe(true);
     expect(Sentry.captureException).not.toHaveBeenCalled();
+  });
+
+  it("distinguishes HEAD requests from profile downloads", async () => {
+    const response = await GET(profileRequest("HEAD"));
+
+    expectDownloadHeaders(response, "HEAD");
   });
 
   it.each(signingAlgorithms)(
@@ -156,7 +172,7 @@ describe("configuration profile download with the installed core library", () =>
       );
       vi.stubEnv("UDID_TOOLS_PROFILE_SIGNING_PKCS12_PASSPHRASE", passphrase);
 
-      const response = await GET();
+      const response = await GET(profileRequest());
 
       expectDownloadHeaders(response);
       const profile = Buffer.from(await response.arrayBuffer());
@@ -178,7 +194,7 @@ describe("configuration profile download with the installed core library", () =>
       randomBytes(32).toString("base64url")
     );
 
-    await expectGenericFailure(await GET());
+    await expectGenericFailure(await GET(profileRequest()));
   });
 
   it("reports a malformed PKCS#12 identity as a generic server error", async () => {
@@ -186,12 +202,18 @@ describe("configuration profile download with the installed core library", () =>
     vi.stubEnv("UDID_TOOLS_PROFILE_SIGNING_PKCS12_BASE64", randomBytes(64).toString("base64"));
     vi.stubEnv("UDID_TOOLS_PROFILE_SIGNING_PKCS12_PASSPHRASE", passphrase);
 
-    await expectGenericFailure(await GET());
+    await expectGenericFailure(await GET(profileRequest()));
   });
 
   it("fails closed when unsigned signing mode is requested in production", async () => {
     vi.stubEnv("NODE_ENV", "production");
 
-    await expectGenericFailure(await GET());
+    await expectGenericFailure(await GET(profileRequest()));
+  });
+
+  it("records a failed HEAD request separately from profile downloads", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    await expectGenericFailure(await GET(profileRequest("HEAD")), "HEAD");
   });
 });
