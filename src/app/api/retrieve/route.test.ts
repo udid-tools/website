@@ -12,6 +12,9 @@ vi.mock("@sentry/nextjs", () => ({
   captureException: vi.fn(),
   startSpan: vi.fn((_options: unknown, callback: () => unknown) => callback()),
 }));
+vi.mock("@/lib/observability/product-metrics", () => ({
+  recordProfileResponse: vi.fn(),
+}));
 vi.mock("@/lib/profile-service", () => ({
   parseDeviceResponse: mocks.parseDeviceResponse,
 }));
@@ -24,6 +27,7 @@ vi.mock("@/lib/server-config", () => ({
 }));
 
 import { POST } from "@/app/api/retrieve/route";
+import { recordProfileResponse } from "@/lib/observability/product-metrics";
 
 describe("Profile Service response route", () => {
   beforeEach(() => {
@@ -52,6 +56,7 @@ describe("Profile Service response route", () => {
     expect(response.headers.get("location")).toBe(
       "https://www.udid.tools/success?result=encrypted-result"
     );
+    expect(recordProfileResponse).toHaveBeenCalledExactlyOnceWith("accepted", 301);
   });
 
   it("returns 400 without reporting malformed client input", async () => {
@@ -64,6 +69,7 @@ describe("Profile Service response route", () => {
     );
 
     expect(response.status).toBe(400);
+    expect(recordProfileResponse).toHaveBeenCalledExactlyOnceWith("rejected", 400);
     expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
@@ -76,6 +82,7 @@ describe("Profile Service response route", () => {
     );
 
     expect(response.status).toBe(413);
+    expect(recordProfileResponse).toHaveBeenCalledExactlyOnceWith("rejected", 413);
     expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
@@ -89,6 +96,7 @@ describe("Profile Service response route", () => {
     );
 
     expect(response.status).toBe(400);
+    expect(recordProfileResponse).toHaveBeenCalledExactlyOnceWith("rejected", 400);
     expect(Sentry.captureException).not.toHaveBeenCalled();
   });
 
@@ -101,6 +109,7 @@ describe("Profile Service response route", () => {
     );
 
     expect(response.status).toBe(500);
+    expect(recordProfileResponse).toHaveBeenCalledExactlyOnceWith("error", 500);
     expect(Sentry.captureException).toHaveBeenCalledWith(error, {
       tags: { flow: "udid_retrieval", stage: "profile_response", status: "500" },
     });
@@ -115,8 +124,30 @@ describe("Profile Service response route", () => {
     );
 
     expect(response.status).toBe(500);
+    expect(recordProfileResponse).toHaveBeenCalledExactlyOnceWith("error", 500);
     expect(Sentry.captureException).toHaveBeenCalledWith(error, {
       tags: { flow: "udid_retrieval", stage: "profile_response", status: "500" },
     });
+  });
+
+  it("counts a redirect construction failure as an error instead of an accepted response", async () => {
+    const error = new Error("Redirect construction failed");
+    const redirect = vi.spyOn(Response, "redirect").mockImplementationOnce(() => {
+      throw error;
+    });
+
+    try {
+      const response = await POST(
+        new Request("https://www.udid.tools/api/retrieve", { body: "input", method: "POST" })
+      );
+
+      expect(response.status).toBe(500);
+      expect(recordProfileResponse).toHaveBeenCalledExactlyOnceWith("error", 500);
+      expect(Sentry.captureException).toHaveBeenCalledWith(error, {
+        tags: { flow: "udid_retrieval", stage: "profile_response", status: "500" },
+      });
+    } finally {
+      redirect.mockRestore();
+    }
   });
 });

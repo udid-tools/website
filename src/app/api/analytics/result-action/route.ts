@@ -1,11 +1,11 @@
 import { track } from "@vercel/analytics/server";
 import * as Sentry from "@sentry/nextjs";
 import { PayloadTooLargeError, readBody } from "@/lib/http";
+import { recordResultEvent } from "@/lib/observability/product-metrics";
 
 export const runtime = "nodejs";
 
 const MAX_BODY_BYTES = 2048;
-const EVENTS = new Set(["result_page_viewed", "result_page_action"]);
 const SOURCES = new Set(["sample", "profile"]);
 const ACTIONS = new Set(["copy_all", "copy_field", "download", "share"]);
 const FORMATS = new Set(["txt", "json"]);
@@ -50,31 +50,34 @@ export async function POST(request: Request) {
     return Response.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const eventName = allowedString(payload["event_name"], EVENTS);
+  const eventName = payload["event_name"];
   const resultSource = allowedString(payload["result_source"], SOURCES);
-  if (!eventName || !resultSource)
+  if ((eventName !== "result_page_viewed" && eventName !== "result_page_action") || !resultSource)
     return Response.json({ error: "Invalid event" }, { status: 400 });
 
+  const attributes = {
+    action: allowedString(payload["action"], ACTIONS),
+    field_count:
+      typeof payload["field_count"] === "number" &&
+      Number.isInteger(payload["field_count"]) &&
+      payload["field_count"] >= 0 &&
+      payload["field_count"] <= 6
+        ? payload["field_count"]
+        : undefined,
+    field_label: allowedString(payload["field_label"], FIELD_LABELS),
+    field_type: allowedString(payload["field_type"], FIELD_TYPES),
+    format: allowedString(payload["format"], FORMATS),
+    has_device_info:
+      typeof payload["has_device_info"] === "boolean" ? payload["has_device_info"] : undefined,
+    outcome: allowedString(payload["outcome"], OUTCOMES),
+    result_source: resultSource,
+    share_available:
+      typeof payload["share_available"] === "boolean" ? payload["share_available"] : undefined,
+  };
+  recordResultEvent(eventName, attributes);
+
   try {
-    await track(eventName, {
-      action: allowedString(payload["action"], ACTIONS),
-      field_count:
-        typeof payload["field_count"] === "number" &&
-        Number.isInteger(payload["field_count"]) &&
-        payload["field_count"] >= 0 &&
-        payload["field_count"] <= 6
-          ? payload["field_count"]
-          : undefined,
-      field_label: allowedString(payload["field_label"], FIELD_LABELS),
-      field_type: allowedString(payload["field_type"], FIELD_TYPES),
-      format: allowedString(payload["format"], FORMATS),
-      has_device_info:
-        typeof payload["has_device_info"] === "boolean" ? payload["has_device_info"] : undefined,
-      outcome: allowedString(payload["outcome"], OUTCOMES),
-      result_source: resultSource,
-      share_available:
-        typeof payload["share_available"] === "boolean" ? payload["share_available"] : undefined,
-    });
+    await track(eventName, attributes);
   } catch (error) {
     Sentry.captureException(error, { tags: { stage: "result_analytics" } });
   }

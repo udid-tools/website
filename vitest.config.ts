@@ -20,6 +20,7 @@ export default defineConfig({
         "src/lib/http.ts",
         "src/lib/profile-challenge.ts",
         "src/lib/result-token.ts",
+        "src/lib/observability/product-metrics.ts",
         "src/lib/observability/sentry.ts",
       ],
       thresholds: { lines: 90, functions: 90, statements: 90, branches: 90 },

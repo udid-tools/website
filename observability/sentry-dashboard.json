@@ -1,0 +1,599 @@
+{
+  "title": "UDID Tools \u00b7 Usage & Reliability",
+  "projects": [4511604956987472],
+  "environment": ["production"],
+  "period": "30d",
+  "filters": {},
+  "permissions": {
+    "isEditableByEveryone": true,
+    "teamsWithEditAccess": []
+  },
+  "widgets": [
+    {
+      "title": "How to read this dashboard",
+      "description": "Production only \u00b7 30 days by default (the longest available window for this account). **Est.** means Sentry extrapolates sampled traces. Profile requests, iOS callbacks and page loads are separate activity counts, not a user conversion funnel. Scroll to Product outcomes for the new counters; they start with the next website release.",
+      "displayType": "text",
+      "widgetType": null,
+      "queries": [],
+      "layout": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 1,
+        "minH": 1
+      }
+    },
+    {
+      "title": "Profiles issued \u00b7 est.",
+      "description": "Successful GET responses (HTTP 200) from the configuration-profile endpoint. Excludes HEAD checks. Counts responses, not installations or unique people. Estimated from traces.",
+      "displayType": "big_number",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "Issued",
+          "fields": ["count()"],
+          "aggregates": ["count()"],
+          "columns": [],
+          "fieldAliases": [""],
+          "conditions": "is_transaction:true span.op:http.server http.request.method:GET transaction:*api/register.signed.mobileconfig* http.response.status_code:200",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 1,
+        "w": 2,
+        "h": 1,
+        "minH": 1
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "iOS callbacks accepted \u00b7 est.",
+      "description": "POST callbacks verified and redirected to Safari (HTTP 301). An accepted callback is not proof the result page was viewed. Estimated from traces. Zero means no accepted callbacks were recorded in the selected window.",
+      "displayType": "big_number",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "Accepted",
+          "fields": ["count()"],
+          "aggregates": ["count()"],
+          "columns": [],
+          "fieldAliases": [""],
+          "conditions": "is_transaction:true span.op:http.server http.request.method:POST transaction:*api/retrieve* http.response.status_code:301",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 2,
+        "y": 1,
+        "w": 2,
+        "h": 1,
+        "minH": 1
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "Retrieval API \u00b7 5xx rate est.",
+      "description": "100 \u00d7 HTTP 5xx / all traced retrieval-API root requests with an HTTP status. Includes generation and callback endpoints. Same population in numerator and denominator; not uptime or a conversion rate. No traffic makes the ratio undefined.",
+      "displayType": "big_number",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "5xx %",
+          "fields": ["http_response_rate(5)"],
+          "aggregates": ["http_response_rate(5)"],
+          "columns": [],
+          "fieldAliases": ["5xx rate"],
+          "conditions": "is_transaction:true span.op:http.server has:http.response.status_code (transaction:*api/register.signed.mobileconfig* OR transaction:*api/retrieve*)",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 4,
+        "y": 1,
+        "w": 2,
+        "h": 1,
+        "minH": 1
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "Usage \u00b7 pages, profiles and platforms",
+      "description": "Compare issuance and accepted callbacks as operational activity. Public-page counts exclude result and API pages and may include bots. Page-load sample counts are shown beside estimates to make sparse data visible.",
+      "displayType": "text",
+      "widgetType": null,
+      "queries": [],
+      "layout": {
+        "x": 0,
+        "y": 2,
+        "w": 6,
+        "h": 1,
+        "minH": 1
+      }
+    },
+    {
+      "title": "Profile issuance & accepted callbacks \u00b7 est.",
+      "description": "Two separate activity series, with no user-level correlation. Repeated downloads, bots, retries and time-window boundaries affect their relationship.",
+      "displayType": "line",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "Profiles issued",
+          "fields": ["count()"],
+          "aggregates": ["count()"],
+          "columns": [],
+          "fieldAliases": [""],
+          "conditions": "is_transaction:true span.op:http.server http.request.method:GET transaction:*api/register.signed.mobileconfig* http.response.status_code:200",
+          "orderby": "",
+          "isHidden": false
+        },
+        {
+          "name": "Callbacks accepted",
+          "fields": ["count()"],
+          "aggregates": ["count()"],
+          "columns": [],
+          "fieldAliases": [""],
+          "conditions": "is_transaction:true span.op:http.server http.request.method:POST transaction:*api/retrieve* http.response.status_code:301",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 3,
+        "w": 3,
+        "h": 2,
+        "minH": 2
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "Public page loads \u00b7 est.",
+      "description": "Initial browser page-load transactions only. Excludes API/result pages, SPA navigation, resources and click spans. These are not unique visitors or analytics sessions.",
+      "displayType": "line",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "Page loads",
+          "fields": ["count()"],
+          "aggregates": ["count()"],
+          "columns": [],
+          "fieldAliases": [""],
+          "conditions": "is_transaction:true span.op:pageload !transaction:/api/* !transaction:/success*",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 3,
+        "w": 3,
+        "h": 2,
+        "minH": 2
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "Public pages \u00b7 volume & experience",
+      "description": "Page-load estimates, actual stored samples, and p75 Largest Contentful Paint. Guide articles currently share the normalized /guides/:slug route. Low sample counts limit interpretation.",
+      "displayType": "table",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "Pages",
+          "fields": ["transaction", "count()", "count_sample()", "p75(measurements.lcp)"],
+          "aggregates": ["count()", "count_sample()", "p75(measurements.lcp)"],
+          "columns": ["transaction"],
+          "fieldAliases": ["Page", "Est. loads", "Samples", "LCP p75"],
+          "conditions": "is_transaction:true span.op:pageload !transaction:/api/* !transaction:/success*",
+          "orderby": "-count()",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 5,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      },
+      "interval": "1d",
+      "limit": 8
+    },
+    {
+      "title": "Browser & OS mix \u00b7 est. page loads",
+      "description": "One initial page-load transaction per observation; excludes resource/click operations. A compatibility signal, not unique browser users. Headless traffic remains visible.",
+      "displayType": "table",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "Platforms",
+          "fields": ["browser.name", "os.name", "count()", "count_sample()"],
+          "aggregates": ["count()", "count_sample()"],
+          "columns": ["browser.name", "os.name"],
+          "fieldAliases": ["Browser", "OS", "Est. loads", "Samples"],
+          "conditions": "is_transaction:true span.op:pageload !transaction:/api/* !transaction:/success*",
+          "orderby": "-count()",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 5,
+        "w": 3,
+        "h": 3,
+        "minH": 2
+      },
+      "interval": "1d",
+      "limit": 8
+    },
+    {
+      "title": "Experience \u00b7 Core Web Vitals",
+      "description": "Real-browser Core Web Vitals at p75. Reference targets: LCP \u2264 2.5 s \u00b7 INP \u2264 200 ms \u00b7 CLS \u2264 0.1. Metrics have different observation counts; sparse data is not a stable performance verdict.",
+      "displayType": "text",
+      "widgetType": null,
+      "queries": [],
+      "layout": {
+        "x": 0,
+        "y": 8,
+        "w": 6,
+        "h": 1,
+        "minH": 1
+      }
+    },
+    {
+      "title": "LCP p75",
+      "description": "How quickly the main content appears. Reference good threshold: 2.5 seconds. Uses browser.web_vital metrics; result-page monitoring remains excluded.",
+      "displayType": "big_number",
+      "widgetType": "tracemetrics",
+      "queries": [
+        {
+          "name": "p75",
+          "fields": ["p75(value,browser.web_vital.lcp,distribution,millisecond)"],
+          "aggregates": ["p75(value,browser.web_vital.lcp,distribution,millisecond)"],
+          "columns": [],
+          "fieldAliases": [""],
+          "conditions": "",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 9,
+        "w": 2,
+        "h": 1,
+        "minH": 1
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "INP p75",
+      "description": "Responsiveness to interactions. Reference good threshold: 200 milliseconds. Uses browser.web_vital metrics; result-page monitoring remains excluded.",
+      "displayType": "big_number",
+      "widgetType": "tracemetrics",
+      "queries": [
+        {
+          "name": "p75",
+          "fields": ["p75(value,browser.web_vital.inp,distribution,millisecond)"],
+          "aggregates": ["p75(value,browser.web_vital.inp,distribution,millisecond)"],
+          "columns": [],
+          "fieldAliases": [""],
+          "conditions": "",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 2,
+        "y": 9,
+        "w": 2,
+        "h": 1,
+        "minH": 1
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "CLS p75",
+      "description": "Visual stability. Reference good threshold: 0.1. CLS currently has fewer observations than the other vitals. Uses browser.web_vital metrics; result-page monitoring remains excluded.",
+      "displayType": "big_number",
+      "widgetType": "tracemetrics",
+      "queries": [
+        {
+          "name": "p75",
+          "fields": ["p75(value,browser.web_vital.cls,distribution,none)"],
+          "aggregates": ["p75(value,browser.web_vital.cls,distribution,none)"],
+          "columns": [],
+          "fieldAliases": [""],
+          "conditions": "",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 4,
+        "y": 9,
+        "w": 2,
+        "h": 1,
+        "minH": 1
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "Reliability \u00b7 API failures and latency",
+      "description": "The API table counts root server requests only. Separate client rejections (400/413/405) from server failures (5xx). Latency charts measure the actual generation and verification operations; issues below link to their investigation.",
+      "displayType": "text",
+      "widgetType": null,
+      "queries": [],
+      "layout": {
+        "x": 0,
+        "y": 10,
+        "w": 6,
+        "h": 1,
+        "minH": 1
+      }
+    },
+    {
+      "title": "Retrieval API \u00b7 outcomes & latency",
+      "description": "One root server span per traced request, grouped by normalized transaction and HTTP response status. Stored samples provide context for estimates and p95. No resource/client span double-counting.",
+      "displayType": "table",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "API",
+          "fields": [
+            "transaction",
+            "http.response.status_code",
+            "count()",
+            "count_sample()",
+            "p95(span.duration)"
+          ],
+          "aggregates": ["count()", "count_sample()", "p95(span.duration)"],
+          "columns": ["transaction", "http.response.status_code"],
+          "fieldAliases": ["Endpoint", "HTTP", "Est. requests", "Samples", "p95"],
+          "conditions": "is_transaction:true span.op:http.server has:http.response.status_code (transaction:*api/register.signed.mobileconfig* OR transaction:*api/retrieve*)",
+          "orderby": "-count()",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 11,
+        "w": 6,
+        "h": 3,
+        "minH": 2
+      },
+      "interval": "1d",
+      "limit": 10
+    },
+    {
+      "title": "Profile generation \u00b7 successful duration",
+      "description": "p50 and p95 of profile.generate spans marked ok. Measures total generation, not a nonexistent standalone signing span. Samples include GET and HEAD generation.",
+      "displayType": "line",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "Generation",
+          "fields": ["p50(span.duration)", "p95(span.duration)"],
+          "aggregates": ["p50(span.duration)", "p95(span.duration)"],
+          "columns": [],
+          "fieldAliases": ["p50", "p95"],
+          "conditions": "span.op:profile.generate span.status:ok",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 14,
+        "w": 3,
+        "h": 2,
+        "minH": 2
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "iOS response verification \u00b7 sample context",
+      "description": "Stored verification samples, p50 and p95 of profile.parse, including rejected responses. Small sample counts limit interpretation. API response outcomes are shown in the table above.",
+      "displayType": "table",
+      "widgetType": "spans",
+      "queries": [
+        {
+          "name": "Verification",
+          "fields": ["count_sample()", "p50(span.duration)", "p95(span.duration)"],
+          "aggregates": ["count_sample()", "p50(span.duration)", "p95(span.duration)"],
+          "columns": [],
+          "fieldAliases": ["Samples", "p50", "p95"],
+          "conditions": "span.op:profile.parse",
+          "orderby": "",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 14,
+        "w": 3,
+        "h": 2,
+        "minH": 2
+      },
+      "interval": "1d"
+    },
+    {
+      "title": "Errors to investigate",
+      "description": "Captured error events ranked by event count. Includes browser/injected-script failures as well as server issues; stage helps locate first-party flow failures. Click an issue to inspect status and release. Counts are events, not affected users.",
+      "displayType": "table",
+      "widgetType": "error-events",
+      "queries": [
+        {
+          "name": "Issues",
+          "fields": ["issue", "title", "stage", "count()"],
+          "aggregates": ["count()"],
+          "columns": ["issue", "title", "stage"],
+          "fieldAliases": ["Issue", "Error", "Stage", "Events"],
+          "conditions": "",
+          "orderby": "-count()",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 16,
+        "w": 6,
+        "h": 3,
+        "minH": 2
+      },
+      "interval": "1d",
+      "limit": 8
+    },
+    {
+      "title": "Product outcomes \u00b7 pending website release",
+      "description": "The counters below begin after the new instrumentation is released. Earlier periods have **no historical data**. Counters are independent of trace sampling but subject to delivery/blocking and repeated events. Sample results are excluded; these are events, not unique people or a deduplicated funnel.",
+      "displayType": "text",
+      "widgetType": null,
+      "queries": [],
+      "layout": {
+        "x": 0,
+        "y": 19,
+        "w": 6,
+        "h": 1,
+        "minH": 1
+      }
+    },
+    {
+      "title": "Profile outcomes \u00b7 counters after release",
+      "description": "Unsampled application counters. Requests count GET generation outcomes; responses count POST verification outcomes, including pre-parse rejections. No backfill before the instrumentation release.",
+      "displayType": "line",
+      "widgetType": "tracemetrics",
+      "queries": [
+        {
+          "name": "Requests",
+          "fields": ["outcome", "sum(value,udid_tools.profile.requests,counter,none)"],
+          "aggregates": ["sum(value,udid_tools.profile.requests,counter,none)"],
+          "columns": ["outcome"],
+          "fieldAliases": ["", ""],
+          "conditions": "http_method:GET",
+          "orderby": "-sum(value,udid_tools.profile.requests,counter,none)",
+          "isHidden": false
+        },
+        {
+          "name": "Responses",
+          "fields": ["outcome", "sum(value,udid_tools.profile.responses,counter,none)"],
+          "aggregates": ["sum(value,udid_tools.profile.responses,counter,none)"],
+          "columns": ["outcome"],
+          "fieldAliases": ["", ""],
+          "conditions": "",
+          "orderby": "-sum(value,udid_tools.profile.responses,counter,none)",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 20,
+        "w": 3,
+        "h": 2,
+        "minH": 2
+      },
+      "interval": "1d",
+      "limit": 5
+    },
+    {
+      "title": "Result views with device data \u00b7 after release",
+      "description": "Client-reported result views received by the allowlisted server endpoint. Filters result_source:profile and has_device_info:true. Excludes demo/sample and empty/invalid results. Refreshes can repeat views; not proof of a unique completed journey.",
+      "displayType": "line",
+      "widgetType": "tracemetrics",
+      "queries": [
+        {
+          "name": "Views",
+          "fields": ["result_source", "sum(value,udid_tools.result.views,counter,none)"],
+          "aggregates": ["sum(value,udid_tools.result.views,counter,none)"],
+          "columns": ["result_source"],
+          "fieldAliases": ["Result source", "Views"],
+          "conditions": "result_source:profile has_device_info:true",
+          "orderby": "-sum(value,udid_tools.result.views,counter,none)",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 20,
+        "w": 3,
+        "h": 2,
+        "minH": 2
+      },
+      "interval": "1d",
+      "limit": 1
+    },
+    {
+      "title": "Result actions & outcomes \u00b7 after release",
+      "description": "Copy all, copy field, download and share events from real profile results. Shows success/failure/fallback/unavailable/dismissed/missing-info categories. Share dismissed may include native share errors; download success means the browser download was initiated.",
+      "displayType": "bar",
+      "widgetType": "tracemetrics",
+      "queries": [
+        {
+          "name": "Actions",
+          "fields": ["action", "outcome", "sum(value,udid_tools.result.actions,counter,none)"],
+          "aggregates": ["sum(value,udid_tools.result.actions,counter,none)"],
+          "columns": ["action", "outcome"],
+          "fieldAliases": ["", "", ""],
+          "conditions": "result_source:profile",
+          "orderby": "-sum(value,udid_tools.result.actions,counter,none)",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 0,
+        "y": 22,
+        "w": 3,
+        "h": 2,
+        "minH": 2
+      },
+      "interval": "1d",
+      "limit": 10
+    },
+    {
+      "title": "Download formats \u00b7 after release",
+      "description": "TXT versus JSON download initiation events on real profile results, with outcome:success. This measures feature use, not verification that the file was saved.",
+      "displayType": "bar",
+      "widgetType": "tracemetrics",
+      "queries": [
+        {
+          "name": "Formats",
+          "fields": ["format", "sum(value,udid_tools.result.actions,counter,none)"],
+          "aggregates": ["sum(value,udid_tools.result.actions,counter,none)"],
+          "columns": ["format"],
+          "fieldAliases": ["", ""],
+          "conditions": "result_source:profile action:download outcome:success",
+          "orderby": "-sum(value,udid_tools.result.actions,counter,none)",
+          "isHidden": false
+        }
+      ],
+      "layout": {
+        "x": 3,
+        "y": 22,
+        "w": 3,
+        "h": 2,
+        "minH": 2
+      },
+      "interval": "1d",
+      "limit": 2
+    },
+    {
+      "title": "Coverage & interpretation",
+      "description": "Production telemetry only. No identifiers, profile contents, result tokens or query strings are needed for these metrics. New product counters require a website release and do not backfill. Acquisition sources and SEO performance remain in Vercel Analytics/Search Console; Sentry provides service health, experience and anonymous product activity.",
+      "displayType": "text",
+      "widgetType": null,
+      "queries": [],
+      "layout": {
+        "x": 0,
+        "y": 24,
+        "w": 6,
+        "h": 1,
+        "minH": 1
+      }
+    }
+  ]
+}

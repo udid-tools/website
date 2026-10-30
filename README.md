@@ -36,6 +36,20 @@ configured without request bodies, default personal information, or Session Repl
 filters remove device identifiers, result tokens, and URL query strings. Hosting and operational
 logging caveats are documented in the [Privacy Policy](https://www.udid.tools/privacy-policy).
 
+## Sentry dashboard
+
+The [Usage & Reliability dashboard](https://my-projects-vy.sentry.io/dashboard/4075032/)
+combines production activity, browser experience, retrieval API outcomes, and error investigation.
+Its complete configuration is kept in [`observability/sentry-dashboard.json`](./observability/sentry-dashboard.json).
+Trace-based counts are estimates; stored sample counts accompany the detailed tables.
+
+Four server-side counters record profile request outcomes, profile response outcomes, result views,
+and result actions. They use only bounded category attributes and are independent of trace sampling.
+Result events are client-reported and can repeat; the dashboard excludes sample results and does
+not present activity ratios as unique-user conversion. Product counters start collecting after
+this instrumentation is deployed, with no historical backfill. Deployment follows the normal
+release process.
+
 ## Canonical guides
 
 - [How to find an iPhone or iPad UDID](https://www.udid.tools/guides/how-to-find-iphone-udid)

@@ -1,15 +1,17 @@
 import * as Sentry from "@sentry/nextjs";
+import { recordProfileRequest } from "@/lib/observability/product-metrics";
 import { generateDeviceProfile } from "@/lib/profile-service";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const method = request.method;
   try {
     const profile = await Sentry.startSpan(
       { name: "Generate configuration profile", op: "profile.generate" },
       generateDeviceProfile
     );
-    return new Response(Buffer.from(profile.data), {
+    const response = new Response(Buffer.from(profile.data), {
       status: 200,
       headers: {
         "Cache-Control": "no-store",
@@ -18,7 +20,10 @@ export async function GET() {
         "X-Content-Type-Options": "nosniff",
       },
     });
+    if (method === "GET" || method === "HEAD") recordProfileRequest("success", method);
+    return response;
   } catch (error) {
+    if (method === "GET" || method === "HEAD") recordProfileRequest("error", method);
     Sentry.captureException(error, {
       tags: { flow: "udid_retrieval", stage: "profile_generation" },
     });
