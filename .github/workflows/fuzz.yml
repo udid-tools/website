@@ -33,6 +33,8 @@ jobs:
         with:
           node-version: 22.14.0
           package-manager-cache: false
+      - name: Install integrity-pinned npm
+        run: node .github/scripts/install-npm.mjs
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run property-based security tests

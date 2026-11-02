@@ -51,11 +51,13 @@ jobs:
         with:
           node-version: 22.14.0
           package-manager-cache: false
+      - name: Install integrity-pinned npm
+        run: node .github/scripts/install-npm.mjs
       - name: Initialize CodeQL
         uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           languages: javascript-typescript
-          queries: security-extended
+          queries: security-extended,security-and-quality
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Build website
@@ -64,6 +66,86 @@ jobs:
         uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           category: /language:javascript-typescript
+
+  codeql-actions:
+    name: CodeQL Actions
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Initialize CodeQL for GitHub Actions
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: actions
+          queries: security-extended
+      - name: Analyze GitHub Actions workflows
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          category: /language:actions
+
+  secret-scanning:
+    name: Secret scanning
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+
+    steps:
+      - name: Check out complete repository history
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install verified Gitleaks CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="${RUNNER_TEMP}/gitleaks"
+          mkdir -p "${tool_dir}"
+          archive="${tool_dir}/gitleaks.tar.gz"
+          curl --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+            --connect-timeout 15 --max-time 60 --max-filesize 33554432 --retry 3 \
+            --output "${archive}" \
+            https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          printf '%s  %s\n' '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb' "${archive}" | sha256sum --check --strict
+          tar --extract --gzip --file="${archive}" --directory="${tool_dir}" gitleaks
+          printf '[extend]\nuseDefault = true\n' > "${tool_dir}/default.toml"
+
+      - name: Scan history and tracked working tree without exposing findings
+        shell: bash
+        run: |
+          set -euo pipefail
+          tool_dir="${RUNNER_TEMP}/gitleaks"
+          source_tree="$(mktemp -d "${RUNNER_TEMP}/gitleaks-tree.XXXXXX")"
+          trap 'rm -rf "${source_tree}"' EXIT
+          git ls-files -z | tar --null --files-from=- --create --file=- | tar --extract --directory="${source_tree}"
+          scan() {
+            local mode="$1"
+            local source="$2"
+            local status=0
+            "${tool_dir}/gitleaks" "${mode}" "${source}" \
+              --config "${tool_dir}/default.toml" \
+              --gitleaks-ignore-path /dev/null --ignore-gitleaks-allow \
+              --redact=100 --no-banner --log-level=error --timeout=600 --exit-code=2 \
+              "${@:3}" > /dev/null 2>&1 || status=$?
+            if [[ "${status}" -eq 2 ]]; then
+              echo '::error::Secret scanning detected potential credentials. Review locally using the pinned CLI with full redaction.'
+              exit 1
+            elif [[ "${status}" -ne 0 ]]; then
+              echo '::error::Secret scanning could not complete. No findings were printed or uploaded.'
+              exit 1
+            fi
+          }
+          scan git "${GITHUB_WORKSPACE}" --log-opts=--all
+          scan dir "${source_tree}"
+          echo 'Secret scanning passed for repository history and the tracked working tree.'
 
   npm-audit:
     name: npm audit
@@ -79,6 +161,8 @@ jobs:
         with:
           node-version: 22.14.0
           package-manager-cache: false
+      - name: Install integrity-pinned npm
+        run: node .github/scripts/install-npm.mjs
       - name: Install locked dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Verify registry signatures

@@ -88,6 +88,8 @@ jobs:
         with:
           node-version: 22.14.0
           package-manager-cache: false
+      - name: Install integrity-pinned npm
+        run: node .github/scripts/install-npm.mjs
       - name: Install locked application dependencies
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Run complete verification
@@ -226,11 +228,23 @@ jobs:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       npm_config_ignore_scripts: "true"
     steps:
+      - name: Check out npm toolchain configuration
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          ref: ${{ github.sha }}
+          sparse-checkout: |
+            package.json
+            .github/npm-toolchain.json
+            .github/scripts/install-npm.mjs
+          sparse-checkout-cone-mode: false
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: 22.14.0
           package-manager-cache: false
+      - name: Install integrity-pinned npm
+        run: node .github/scripts/install-npm.mjs
       - name: Download the published release bundle
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
