@@ -33,7 +33,8 @@
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:fuzz": "vitest run src/lib/__tests__/fuzz.test.ts",
-    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build"
+    "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run test:npm-toolchain && npm run build",
+    "test:npm-toolchain": "node --input-type=module --eval 'import { mkdirSync } from \"node:fs\"; mkdirSync(\"coverage\", { recursive: true });' && node --experimental-test-coverage --test-coverage-include=.github/scripts/install-npm.mjs --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-functions=90 --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=coverage/npm-toolchain.lcov --test .github/scripts/install-npm.node-test.mjs"
   },
   "dependencies": {
     "@sentry/nextjs": "10.76.2",
@@ -67,18 +68,18 @@
     "vitest": "4.1.12"
   },
   "overrides": {
-    "eslint-config-next@16.4.2": {
-      "@next/eslint-plugin-next": "14.2.35"
+    "@next/eslint-plugin-next": {
+      ".": "$@next/eslint-plugin-next",
+      "glob": "14.0.3"
     },
-    "glob@10.3.10": "10.5.0",
+    "@sentry/bundler-plugins@10.76.2": {
+      "glob": "14.0.3"
+    },
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.4"
+    },
     "minimatch@3.1.5": {
       "brace-expansion": "1.1.21"
-    },
-    "minimatch@9.0.9": {
-      "brace-expansion": "2.1.7"
-    },
-    "minimatch@10.2.6": {
-      "brace-expansion": "5.0.12"
     },
     "sharp": "0.35.5",
     "source-map-js": "1.2.2"

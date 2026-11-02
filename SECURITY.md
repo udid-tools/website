@@ -12,7 +12,7 @@ Use [GitHub Private Vulnerability Reporting](https://github.com/udid-tools/websi
 
 Include the impact, affected release, realistic attack scenario, and a minimal reproduction using synthetic data. Never send production certificates, private keys, PKCS#12/PFX identities, passphrases, challenge values, result tokens, or unredacted device responses.
 
-We aim to acknowledge a complete report within three business days and provide an initial triage within seven business days. These are best-effort targets, not guarantees.
+We aim to acknowledge a complete report within three business days and provide an initial triage within seven business days. These are best-effort targets, not guarantees. For publicly known medium-severity or higher vulnerabilities with an available fix, we aim to remediate within 60 days.
 
 ## Security expectations
 
