@@ -4,6 +4,10 @@ The project welcomes focused bug fixes, accessibility and compatibility improvem
 
 Before contributing, read the [Code of Conduct](CODE_OF_CONDUCT.md) and [Security Policy](SECURITY.md), then search existing issues and pull requests. Never submit real device identifiers, result links, configuration-profile responses, certificates, private keys, or passphrases.
 
+Read the [accessibility policy](./ACCESSIBILITY.md) before changing documentation,
+examples, or user-facing behavior. Report barriers through its feedback channels
+and include the relevant accessibility checks and remaining limitations in your PR.
+
 ## Development
 
 ```bash
