@@ -7,6 +7,7 @@
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/udid-tools/website/badge)](https://scorecard.dev/viewer/?uri=github.com/udid-tools/website)
 [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/14396/badge)](https://www.bestpractices.dev/projects/14396)
 [![License: MIT](https://img.shields.io/github/license/udid-tools/website)](./LICENSE)
+[![Accessibility: policy](https://img.shields.io/badge/Accessibility-policy-blue)](./ACCESSIBILITY.md)
 
 The official [UDID Tools](https://www.udid.tools) marketing website and free Safari-based utility for retrieving an iPhone or iPad UDID. It is also a public integration example for [`@udid-tools/core`](https://github.com/udid-tools/core) and [`@udid-tools/device-info`](https://github.com/udid-tools/device-info).
 
@@ -96,6 +97,12 @@ preview builds show only their commit, while local builds make no deployment-sou
 ## Security
 
 Never report a vulnerability or share a real device identifier, result link, profile response, certificate, private key, or passphrase in a public issue. Use [private vulnerability reporting](https://github.com/udid-tools/website/security/advisories/new).
+
+## Accessibility
+
+Read our [accessibility policy](./ACCESSIBILITY.md) for the scope, known limitations,
+ways to report a barrier, and contributor checks. The policy badge is a link to
+that information, not a conformance certification.
 
 ## License
 
