@@ -27,9 +27,40 @@ export async function GET(request: Request) {
     Sentry.captureException(error, {
       tags: { flow: "udid_retrieval", stage: "profile_generation" },
     });
-    return new Response("Internal Server Error", {
-      status: 500,
-      headers: { "Cache-Control": "no-store", "Content-Type": "text/plain; charset=utf-8" },
-    });
+    const wantsHtml = request.headers.get("accept")?.includes("text/html");
+    return new Response(
+      wantsHtml
+        ? `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profile download unavailable · UDID Tools</title>
+  <style>
+    body { margin: 0; padding: 1.5rem; font: 1rem/1.6 system-ui, sans-serif; background: #fff; color: #171717; }
+    main { max-width: 40rem; margin: 3rem auto; }
+    a { display: inline-block; padding: .75rem; color: #1d4ed8; }
+    a:focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Profile download unavailable</h1>
+    <p>We could not prepare the configuration profile. Please try again in a few minutes.</p>
+    <p><a href="/api/register.signed.mobileconfig">Try downloading again</a><a href="/#how-it-works">Review the instructions</a></p>
+    <p>If the problem continues, contact <a href="mailto:hello@udid.tools">hello@udid.tools</a>. Do not include device identifiers or result links.</p>
+  </main>
+</body>
+</html>`
+        : "Internal Server Error",
+      {
+        status: 500,
+        headers: {
+          "Cache-Control": "no-store",
+          Vary: "Accept",
+          "Content-Type": wantsHtml ? "text/html; charset=utf-8" : "text/plain; charset=utf-8",
+        },
+      }
+    );
   }
 }

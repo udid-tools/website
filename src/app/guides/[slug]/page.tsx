@@ -101,7 +101,7 @@ export default async function GuidePage({ params }: GuidePageProps) {
       ))}
       <Header />
 
-      <main className="bg-gradient-to-b from-slate-50/70 to-white">
+      <main id="main-content" tabIndex={-1} className="bg-gradient-to-b from-slate-50/70 to-white">
         <article className="mx-auto max-w-4xl px-6 py-12 md:py-20">
           <Link
             href="/guides"
@@ -177,7 +177,12 @@ export default async function GuidePage({ params }: GuidePageProps) {
                   </ul>
                 )}
                 {section.table && (
-                  <div className="mt-6 overflow-x-auto rounded-xl border border-slate-200">
+                  <div
+                    role="region"
+                    aria-label={`${section.table.caption} (scroll horizontally)`}
+                    tabIndex={0}
+                    className="mt-6 overflow-x-auto rounded-xl border border-slate-200"
+                  >
                     <table className="min-w-full border-collapse text-left text-sm">
                       <caption className="sr-only">{section.table.caption}</caption>
                       <thead className="bg-slate-50 text-slate-900">

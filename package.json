@@ -34,7 +34,8 @@
     "test:coverage": "vitest run --coverage",
     "test:fuzz": "vitest run src/lib/__tests__/fuzz.test.ts",
     "verify": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run test:npm-toolchain && npm run build",
-    "test:npm-toolchain": "node --input-type=module --eval 'import { mkdirSync } from \"node:fs\"; mkdirSync(\"coverage\", { recursive: true });' && node --experimental-test-coverage --test-coverage-include=.github/scripts/install-npm.mjs --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-functions=90 --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=coverage/npm-toolchain.lcov --test .github/scripts/install-npm.node-test.mjs"
+    "test:npm-toolchain": "node --input-type=module --eval 'import { mkdirSync } from \"node:fs\"; mkdirSync(\"coverage\", { recursive: true });' && node --experimental-test-coverage --test-coverage-include=.github/scripts/install-npm.mjs --test-coverage-lines=90 --test-coverage-branches=90 --test-coverage-functions=90 --test-reporter=spec --test-reporter=lcov --test-reporter-destination=stdout --test-reporter-destination=coverage/npm-toolchain.lcov --test .github/scripts/install-npm.node-test.mjs",
+    "test:a11y": "playwright test"
   },
   "dependencies": {
     "@sentry/nextjs": "10.76.2",
@@ -50,9 +51,11 @@
     "simple-icons": "16.36.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
     "@eslint-community/eslint-utils": "4.10.1",
     "@eslint/compat": "2.1.1",
     "@next/eslint-plugin-next": "14.2.35",
+    "@playwright/test": "1.64.1",
     "@tailwindcss/postcss": "4.3.3",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",

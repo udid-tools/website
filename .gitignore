@@ -45,3 +45,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /.idea/
+
+# browser test output
+/test-results/
+/playwright-report/

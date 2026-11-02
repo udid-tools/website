@@ -79,7 +79,7 @@ export function HeroSection() {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="mt-16 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 text-sm text-slate-500 xl:justify-start"
           >
-            {["No Apple ID required", "Safari on iPhone/iPad", "iOS 12+"].map((item) => (
+            {["No Apple ID required", "Safari on iPhone/iPad", "Safari 16.4+"].map((item) => (
               <div key={item} className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-green-500" aria-hidden="true" />
                 <span>{item}</span>

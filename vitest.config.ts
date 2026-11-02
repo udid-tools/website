@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 const root = fileURLToPath(new URL("./", import.meta.url));
 
@@ -12,11 +12,13 @@ export default defineConfig({
   },
   test: {
     environment: "node",
+    exclude: [...configDefaults.exclude, "tests/accessibility/**"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary", "lcovonly"],
       include: [
         "src/lib/build-info.ts",
+        "src/utils/clipboard.ts",
         "src/lib/http.ts",
         "src/lib/profile-challenge.ts",
         "src/lib/result-token.ts",

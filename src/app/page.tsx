@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <PageShell>
       <QrAttributionTracker />
-      <main>
+      <main id="main-content" tabIndex={-1}>
         <HeroSection />
         <HowItWorksSection />
         <FeaturesSection />

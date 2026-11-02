@@ -45,7 +45,7 @@ function SourceReference({ buildInfo }: { buildInfo: BuildInfo }) {
       target="_blank"
       rel="noopener noreferrer"
       className={sourceLinkClassName}
-      aria-label={`View source commit ${buildInfo.sourceSha} on GitHub`}
+      aria-label={`View source commit ${buildInfo.shortSourceSha} on GitHub`}
     >
       commit <code className="font-mono">{buildInfo.shortSourceSha}</code>
     </a>
@@ -88,7 +88,7 @@ export function Footer() {
               href={REPOSITORY_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 transition-colors hover:bg-slate-200"
+              className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 transition-colors hover:bg-slate-200"
               aria-label="UDID Tools website on GitHub"
             >
               <GithubIcon />
@@ -97,7 +97,7 @@ export function Footer() {
               href="https://www.linkedin.com/in/alexandertartmin"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 transition-colors hover:bg-slate-200"
+              className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 transition-colors hover:bg-slate-200"
               aria-label="Alexander Tartmin on LinkedIn"
             >
               <ProfileIcon />
@@ -117,19 +117,25 @@ export function Footer() {
           >
             <Link
               href="/guides"
-              className="text-xs text-slate-600 transition-colors hover:text-slate-900"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center text-xs text-slate-600 transition-colors hover:text-slate-900"
             >
               Guides
             </Link>
             <Link
               href="/privacy-policy"
-              className="text-xs text-slate-600 transition-colors hover:text-slate-900"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center text-xs text-slate-600 transition-colors hover:text-slate-900"
             >
               Privacy Policy
             </Link>
+            <a
+              href={`${REPOSITORY_URL}/blob/main/ACCESSIBILITY.md`}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center text-xs text-slate-600 underline underline-offset-2 hover:text-slate-900"
+            >
+              Accessibility
+            </a>
             <Link
               href="/terms"
-              className="text-xs text-slate-600 transition-colors hover:text-slate-900"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center text-xs text-slate-600 transition-colors hover:text-slate-900"
             >
               Terms of Service
             </Link>

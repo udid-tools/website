@@ -12,7 +12,7 @@ import {
   Smartphone,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { DeviceInfoCard } from "@/components/success/DeviceInfoCard";
 import { Motion } from "@/components/Motion";
 import type { DeviceResult } from "@/lib/result";
@@ -23,7 +23,7 @@ type ResultViewProps = { result: DeviceResult | null; sample: boolean };
 type AnalyticsAttributes = Record<string, boolean | number | string>;
 
 const buttonClass =
-  "inline-flex h-9 items-center justify-center gap-2 whitespace-nowrap rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:bg-slate-50";
+  "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:bg-slate-50";
 
 export function ResultView({ result, sample }: ResultViewProps) {
   const data: DeviceResult = result ?? {
@@ -36,8 +36,9 @@ export function ResultView({ result, sample }: ResultViewProps) {
   };
   const hasData = hasDeviceResult(data);
   const [copiedFormat, setCopiedFormat] = useState<"txt" | "json" | null>(null);
-  const [feedback, setFeedback] = useState("");
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [feedback, setFeedback] = useState({ message: "", revision: 0 });
+  const announce = (message: string) =>
+    setFeedback((previous) => ({ message, revision: previous.revision + 1 }));
   const fields = [
     { label: "UDID", key: "UDID", value: data.udid },
     { label: "IMEI", key: "IMEI", value: data.imei },
@@ -49,18 +50,6 @@ export function ResultView({ result, sample }: ResultViewProps) {
   const presentFields = fields.filter((field) => field.value);
   const model = getDeviceModelName(data.product) ?? data.product;
   const osVersion = formatOsVersion({ productIdentifier: data.product, build: data.version });
-
-  useEffect(
-    () => () => {
-      if (timer.current) clearTimeout(timer.current);
-    },
-    []
-  );
-  const temporaryFeedback = (message: string) => {
-    if (timer.current) clearTimeout(timer.current);
-    setFeedback(message);
-    timer.current = setTimeout(() => setFeedback(""), 3000);
-  };
 
   const track = useCallback(
     (eventName: string, attributes: AnalyticsAttributes = {}) => {
@@ -105,9 +94,8 @@ export function ResultView({ result, sample }: ResultViewProps) {
     const copied = await writeClipboard(value);
     if (copied) {
       setCopiedFormat(format);
-      temporaryFeedback(`All device info${format === "json" ? " (JSON)" : ""} copied`);
-      setTimeout(() => setCopiedFormat(null), 2000);
-    } else temporaryFeedback("Copy failed. Please copy manually.");
+      announce(`All device info${format === "json" ? " (JSON)" : ""} copied`);
+    } else announce("Copy failed. Please copy manually.");
     track("result_page_action", {
       action: "copy_all",
       format,
@@ -128,7 +116,7 @@ export function ResultView({ result, sample }: ResultViewProps) {
   async function share() {
     if (!navigator.share) {
       const copied = await writeClipboard(text(true));
-      temporaryFeedback(
+      announce(
         copied
           ? "Native sharing is unavailable, so device info was copied"
           : "Sharing is unavailable in this browser. Please copy manually."
@@ -143,13 +131,22 @@ export function ResultView({ result, sample }: ResultViewProps) {
     try {
       await navigator.share({ title: "Device info", text: text(true) });
       track("result_page_action", { action: "share", outcome: "success", share_available: true });
-    } catch {
-      track("result_page_action", { action: "share", outcome: "dismissed", share_available: true });
+      announce("Device information shared.");
+    } catch (error) {
+      const canceled = error instanceof Error && error.name === "AbortError";
+      announce(
+        canceled ? "Sharing canceled." : "Sharing failed. Use Copy All or Download .txt instead."
+      );
+      track("result_page_action", {
+        action: "share",
+        outcome: canceled ? "dismissed" : "failure",
+        share_available: true,
+      });
     }
   }
 
   return (
-    <main className="flex-1 py-12 md:py-20">
+    <main id="main-content" tabIndex={-1} className="flex-1 py-12 md:py-20">
       <div className="mx-auto max-w-2xl px-6">
         <Link
           href="/"
@@ -201,7 +198,20 @@ export function ResultView({ result, sample }: ResultViewProps) {
             ) : (
               <>
                 <p className="font-medium text-red-900">Unable to retrieve device info</p>
-                <p className="text-sm text-red-700">Please try installing the profile again</p>
+                <p className="text-sm text-red-700">
+                  The result is missing, invalid, or expired.{" "}
+                  <Link href="/#how-it-works" className="font-medium underline underline-offset-2">
+                    Review the instructions
+                  </Link>{" "}
+                  and{" "}
+                  <a
+                    href="/api/register.signed.mobileconfig"
+                    className="font-medium underline underline-offset-2"
+                  >
+                    try installing the profile again
+                  </a>
+                  .
+                </p>
               </>
             )}
           </div>
@@ -212,19 +222,22 @@ export function ResultView({ result, sample }: ResultViewProps) {
           transition={{ delay: 0.1 }}
           className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
         >
-          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 px-6 py-5">
             <div className="flex items-center gap-3">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100">
                 <Smartphone className="h-5 w-5 text-slate-600" aria-hidden="true" />
               </div>
               <div>
-                <h1 className="text-lg font-semibold text-slate-900">Your Device Information</h1>
+                <h1 className="text-lg font-semibold text-slate-900">
+                  {hasData ? "Your Device Information" : "Device information unavailable"}
+                </h1>
                 <p className="text-sm text-slate-500">{model}</p>
               </div>
             </div>
             <button
               type="button"
               onClick={share}
+              disabled={!hasData}
               className={buttonClass}
               title="Share device information"
             >
@@ -237,11 +250,16 @@ export function ResultView({ result, sample }: ResultViewProps) {
               Downloads
             </p>
             <div className="flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
-              <button type="button" onClick={() => copyAll("txt")} className={buttonClass}>
+              <button
+                type="button"
+                disabled={!hasData}
+                onClick={() => copyAll("txt")}
+                className={buttonClass}
+              >
                 {copiedFormat === "txt" ? (
                   <>
                     <Check className="h-4 w-4 text-green-600" aria-hidden="true" />
-                    Copied
+                    Copy All
                   </>
                 ) : (
                   <>
@@ -250,11 +268,16 @@ export function ResultView({ result, sample }: ResultViewProps) {
                   </>
                 )}
               </button>
-              <button type="button" onClick={() => copyAll("json")} className={buttonClass}>
+              <button
+                type="button"
+                disabled={!hasData}
+                onClick={() => copyAll("json")}
+                className={buttonClass}
+              >
                 {copiedFormat === "json" ? (
                   <>
                     <Check className="h-4 w-4 text-green-600" aria-hidden="true" />
-                    Copied
+                    Copy JSON
                   </>
                 ) : (
                   <>
@@ -263,12 +286,17 @@ export function ResultView({ result, sample }: ResultViewProps) {
                   </>
                 )}
               </button>
-              <button type="button" onClick={download} className={buttonClass}>
+              <button type="button" disabled={!hasData} onClick={download} className={buttonClass}>
                 Download .txt
               </button>
             </div>
-            <p className="mt-3 min-h-5 text-sm text-slate-600" aria-live="polite">
-              {feedback}
+            <p
+              className="mt-3 min-h-5 text-sm text-slate-600"
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <span key={feedback.revision}>{feedback.message}</span>
             </p>
           </div>
           <div className="space-y-4 p-6">
