@@ -75,7 +75,10 @@ export function HowItWorksSection() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white shadow-sm">
                     <step.icon className="h-5 w-5 text-slate-700" aria-hidden="true" />
                   </div>
-                  <span className="text-4xl font-bold text-slate-100 transition-colors group-hover:text-blue-100">
+                  <span
+                    aria-hidden="true"
+                    className="text-4xl font-bold text-slate-500 transition-colors group-hover:text-blue-700"
+                  >
                     {step.number}
                   </span>
                 </div>

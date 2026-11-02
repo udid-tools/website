@@ -211,6 +211,21 @@ describe("configuration profile download with the installed core library", () =>
     await expectGenericFailure(await GET(profileRequest()));
   });
 
+  it("gives browser navigation an accessible recovery page without exposing the failure", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const request = new Request(profileRequest(), { headers: { Accept: "text/html" } });
+    const response = await GET(request);
+    expect(response.status).toBe(500);
+    expect(response.headers.get("Content-Type")).toBe("text/html; charset=utf-8");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.headers.get("Vary")).toBe("Accept");
+    const html = await response.text();
+    expect(html).toContain('<html lang="en">');
+    expect(html).toContain("<h1>Profile download unavailable</h1>");
+    expect(html).toContain('href="/#how-it-works"');
+    expect(html).not.toContain("Error:");
+  });
+
   it("records a failed HEAD request separately from profile downloads", async () => {
     vi.stubEnv("NODE_ENV", "production");
 

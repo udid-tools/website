@@ -19,12 +19,13 @@
 html {
   min-width: 320px;
   scroll-behavior: smooth;
+  scroll-padding-top: 7rem;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
-  overflow-x: clip;
+  overflow-wrap: anywhere;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
@@ -33,6 +34,38 @@ body {
 :focus-visible {
   outline: 3px solid #2563eb;
   outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  color: #171717;
+  border: 2px solid #2563eb;
+  border-radius: 0.5rem;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
+main:focus {
+  outline-offset: -3px;
+}
+
+@media (forced-colors: active) {
+  :focus-visible {
+    outline-color: Highlight;
+  }
+
+  .bg-clip-text {
+    background-image: none;
+    color: CanvasText;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

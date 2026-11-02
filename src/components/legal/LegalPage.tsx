@@ -51,7 +51,11 @@ function textWithLinks(text: string): ReactNode[] {
 export function LegalPage({ label, title, description, lastUpdated, sections }: LegalPageProps) {
   return (
     <PageShell>
-      <main className="flex-1 bg-gradient-to-b from-slate-50/70 to-white py-12 md:py-20">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="flex-1 bg-gradient-to-b from-slate-50/70 to-white py-12 md:py-20"
+      >
         <div className="mx-auto max-w-3xl px-6">
           <Link
             href="/"

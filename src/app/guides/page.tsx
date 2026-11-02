@@ -41,7 +41,11 @@ export default function GuidesPage() {
     <div className="min-h-screen bg-white font-sans">
       <Header />
 
-      <main className="bg-gradient-to-b from-slate-50/70 to-white py-12 md:py-20">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="bg-gradient-to-b from-slate-50/70 to-white py-12 md:py-20"
+      >
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-12 max-w-3xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5">

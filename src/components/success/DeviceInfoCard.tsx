@@ -40,6 +40,7 @@ export function DeviceInfoCard({
   onCopy,
 }: DeviceInfoCardProps) {
   const [status, setStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const [feedbackRevision, setFeedbackRevision] = useState(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const Icon = icons[type];
 
@@ -53,9 +54,10 @@ export function DeviceInfoCard({
   async function copy() {
     const copied = await writeClipboard(copyValue ?? value);
     setStatus(copied ? "copied" : "failed");
+    setFeedbackRevision((previous) => previous + 1);
     onCopy({ fieldLabel: label, fieldType: type, outcome: copied ? "success" : "failure" });
     if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setStatus("idle"), 2000);
+    if (copied) timer.current = setTimeout(() => setStatus("idle"), 2000);
   }
 
   return (
@@ -69,8 +71,8 @@ export function DeviceInfoCard({
           Primary
         </div>
       )}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 flex-1 items-start gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 basis-24 flex-wrap items-start gap-3">
           <div
             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${primary ? "bg-blue-100" : "bg-slate-100"}`}
           >
@@ -86,13 +88,13 @@ export function DeviceInfoCard({
             <p
               className={`font-mono text-sm break-all ${primary ? "font-semibold text-blue-900" : "text-slate-800"}`}
             >
-              {value}
+              {value || "Not provided"}
             </p>
             {secondaryValue && (
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
                 {secondaryLabel && (
                   <>
-                    <span className="font-medium tracking-wide text-slate-400 uppercase">
+                    <span className="font-medium tracking-wide text-slate-600 uppercase">
                       {secondaryLabel}
                     </span>
                     <span className="h-1 w-1 rounded-full bg-slate-300" aria-hidden="true" />
@@ -106,7 +108,8 @@ export function DeviceInfoCard({
         <button
           type="button"
           onClick={copy}
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${status === "copied" ? "bg-green-100 text-green-600" : status === "failed" ? "bg-red-100 text-red-600" : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"}`}
+          disabled={!value}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-lg ${status === "copied" ? "bg-green-100 text-green-700" : status === "failed" ? "bg-red-100 text-red-700" : "text-slate-600 hover:bg-slate-100 hover:text-slate-600"}`}
           aria-label={`Copy ${label}`}
         >
           {status === "copied" ? (
@@ -116,12 +119,19 @@ export function DeviceInfoCard({
           )}
         </button>
       </div>
-      <p className="sr-only" aria-live="polite">
-        {status === "copied"
-          ? `${label} copied to clipboard`
-          : status === "failed"
-            ? "Copy failed. Please copy manually."
-            : ""}
+      <p
+        className={status === "failed" ? "mt-3 text-sm text-red-700" : "sr-only"}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <span key={feedbackRevision}>
+          {status === "copied"
+            ? `${label} copied to clipboard`
+            : status === "failed"
+              ? `Copy failed for ${label}. Select the value above and copy it manually.`
+              : ""}
+        </span>
       </p>
     </Motion>
   );

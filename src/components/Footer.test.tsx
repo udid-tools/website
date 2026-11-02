@@ -45,7 +45,7 @@ describe("Footer", () => {
     expect(html).toContain(`https://github.com/udid-tools/website/commit/${SOURCE_SHA}`);
     expect(html).toContain("commit <code");
     expect(html).toContain("0123456789ab");
-    expect(html).toContain(`View source commit ${SOURCE_SHA} on GitHub`);
+    expect(html).toContain("View source commit 0123456789ab on GitHub");
     expect(html).toContain('aria-label="Footer navigation"');
   });
 
