@@ -38,7 +38,7 @@
     "test:a11y": "playwright test"
   },
   "dependencies": {
-    "@sentry/nextjs": "10.76.2",
+    "@sentry/nextjs": "11.11.0",
     "@udid-tools/core": "0.1.0-beta.13",
     "@udid-tools/device-info": "1.0.10",
     "@vercel/analytics": "2.0.1",
