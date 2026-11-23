@@ -7,6 +7,7 @@ import { SITE_STRUCTURED_DATA } from "@/lib/site-structured-data";
 import "./globals.css";
 
 const isPreviewDeployment = process.env["VERCEL_ENV"] === "preview";
+const homePageTitle = "Get Your iPhone UDID Online - Free, No Computer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_HOME_URL),
   manifest: "/site.webmanifest",
   title: {
-    default: "Get iPhone UDID Online - No iTunes or Xcode",
+    default: homePageTitle,
     template: "%s · UDID Tools",
   },
   description:
@@ -44,7 +45,7 @@ export const metadata: Metadata = {
     type: "website",
     url: SITE_HOME_URL,
     siteName: SITE_NAME,
-    title: "Get iPhone UDID Online - No iTunes or Xcode",
+    title: homePageTitle,
     description:
       "Find your iPhone or iPad UDID in Safari with a temporary configuration profile. No iTunes, Xcode, Apple ID, or cable required.",
     images: [
@@ -61,7 +62,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     site: "@alextartmin",
     creator: "@alextartmin",
-    title: "Get iPhone UDID Online - No iTunes or Xcode",
+    title: homePageTitle,
     description: "Find your iPhone or iPad UDID online in Safari with UDID Tools.",
     images: ["/og-image.png"],
   },
